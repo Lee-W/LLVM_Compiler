@@ -20,6 +20,7 @@ public:
     void generateParseTree(vector<Token> allTokens);
     void exportTree(string fileName = "tree.txt");
 
+    map<string, map<string, vector<string> > > getParseTable();
     void printTree();
 
 private:
