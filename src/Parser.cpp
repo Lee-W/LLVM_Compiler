@@ -131,9 +131,9 @@ bool Parser::entryExistInParseTable(string key1, string key2)
     return false;
 }
 
-map<string, map<string, vector<string> > > Parser::getParseTable()
+vector<Node> Parser::getParseTree()
 {
-    return parseTable;
+    return tree;
 }
 
 void Parser::printTree()

@@ -3,9 +3,29 @@
 #include "Lexer.h"
 using namespace std;
 
-
-map<string, map<string,  vector<string> > > parseTable;
+vector<Node> parseTree;
 vector<Token> allTokens;
+
+void readProgram(string fileName);
+void setupParseTree(string grammarFile, string programFile);
+
+int main(int argc, const char *argv[])
+{
+    if (argc != 3) {
+        cout << "Argment error" << endl;
+    } else {
+        setupParseTree(argv[1], argv[2]);
+
+        for (auto i : parseTree) {
+            for (int j = 0; j < i.layer; j++)
+                cout << "  ";
+            cout << left << setw(15) << i.layer
+                 << left << setw(15) << i.symbol << endl;
+        }
+    }
+
+    return 0;
+}
 
 void readProgram(string fileName)
 {
@@ -23,27 +43,21 @@ void readProgram(string fileName)
             allTokens.push_back(t);
 }
 
-int main(int argc, const char *argv[])
+void setupParseTree(string grammarFile, string programFile)
 {
-    if (argc != 3) {
-        cout << "Usage: ./Syntax.out [grammar file] [program]" << endl;
-    } else {
-        ParserGenerator pg(argv[1]);
-        Parser p;
+    ParserGenerator pg(grammarFile);
+    Parser p;
 
-        pg.findFirstSet();
-        pg.findFollowSet();
-        pg.generateParseTable();
+    pg.findFirstSet();
+    pg.findFollowSet();
+    pg.generateParseTable();
 
-        readProgram(argv[2]);
+    readProgram(programFile);
 
-        p.setParseTable(pg.getParseTable());
-        p.setTerminals(pg.getTerminals());
-        p.setNonTerminals(pg.getNonTerminals());
-        p.generateParseTree(allTokens);
-        p.printTree();
-    }
-
-    return 0;
+    p.setParseTable(pg.getParseTable());
+    p.setTerminals(pg.getTerminals());
+    p.setNonTerminals(pg.getNonTerminals());
+    p.generateParseTree(allTokens);
+    parseTree = p.getParseTree();
 }
 
