@@ -1,8 +1,6 @@
 #include "Lexer.h"
 
-Lexer::Lexer()
-{
-}
+Lexer::Lexer() {}
 
 void Lexer::feed(string line)
 {
@@ -78,15 +76,9 @@ void Lexer::feed(string line)
     result.push_back(tokens);
 }
 
-void Lexer::clearResult()
-{
-    result.clear();
-}
+void Lexer::clearResult() { result.clear(); }
 
-vector<vector<Token> > Lexer::getResult()
-{
-    return result;
-}
+vector<vector<Token> > Lexer::getResult() { return result; }
 
 // handle Keyword, number and identifier
 Token Lexer::handleWord(string st)
@@ -146,10 +138,7 @@ bool Lexer::isUpperAlphabet(string ch)
     return (isUpperAlphabet(c));
 }
 
-bool Lexer::isUpperAlphabet(char c)
-{
-    return c >= 'A' && c <= 'Z';
-}
+bool Lexer::isUpperAlphabet(char c) { return c >= 'A' && c <= 'Z'; }
 
 bool Lexer::isLowerAlphabet(string ch)
 {
@@ -157,10 +146,7 @@ bool Lexer::isLowerAlphabet(string ch)
     return isLowerAlphabet(c);
 }
 
-bool Lexer::isLowerAlphabet(char c)
-{
-    return c >= 'a' && c <= 'z';
-}
+bool Lexer::isLowerAlphabet(char c) { return c >= 'a' && c <= 'z'; }
 
 bool Lexer::isAlphabet(string ch)
 {
@@ -179,10 +165,7 @@ bool Lexer::isDigit(string ch)
     return isDigit(c);
 }
 
-bool Lexer::isDigit(char c)
-{
-    return c >= '0' && c <= '9';
-}
+bool Lexer::isDigit(char c) { return c >= '0' && c <= '9'; }
 
 bool Lexer::isEmptyChacter(string ch)
 {

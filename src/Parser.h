@@ -1,7 +1,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <iostream>
 #include <iomanip>
 #include <map>
 #include <vector>
@@ -9,7 +8,6 @@
 #include <set>
 #include "Token.h"
 #include "Node.h"
-using namespace std;
 
 class Parser {
 public:
