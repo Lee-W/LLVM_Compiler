@@ -19,6 +19,7 @@ int main(int argc, const char *argv[])
 
         SemanticAnalyzer sa;
         sa.analysis(parseTree);
+        sa.printSymbolTable();
     }
 
     return 0;

@@ -9,9 +9,11 @@
 class SemanticAnalyzer {
 public:
     void analysis(vector<Node> parseTree);
+    void printSymbolTable();
 private:
     multimap<int, Symbol> symbolTable;
 
+    void readNextLayer(vector<Node>::iterator& it, string& symbol);
 };
 
 #endif
