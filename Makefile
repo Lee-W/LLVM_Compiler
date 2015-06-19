@@ -14,12 +14,18 @@ OBJS := $(subst $(SRC_DIR),$(BUILD_DIR), $(SOURCES:.cpp=.o))
 $(BIN_DIR)/$(TARGET): $(SRC_DIR)/llvmCompiler.cpp \
 					  $(BUILD_DIR)/ParserGenerator.o \
 					  $(BUILD_DIR)/Parser.o \
-					  $(BUILD_DIR)/Lexer.o
+					  $(BUILD_DIR)/Lexer.o \
+					  $(BUILD_DIR)/SemanticAnalyzer.o
 	@mkdir -p $(BIN_DIR)
 	$(CC) -o $@ $< $(SRC_DIR)/ParserGenerator.cpp \
 				   $(SRC_DIR)/Parser.cpp \
 				   $(SRC_DIR)/Lexer.cpp \
+				   $(SRC_DIR)/SemanticAnalyzer.cpp \
 				   $(CFLAG)
+
+$(BUILD_DIR)/SemanticAnalyzer.o: $(SRC_DIR)/SemanticAnalyzer.cpp $(SRC_DIR)/SemanticAnalyzer.h
+	@mkdir -p $(BUILD_DIR)
+	$(CC) -c -o $@ $< $(CFLAG)
 
 $(BUILD_DIR)/Lexer.o: $(SRC_DIR)/Lexer.cpp $(SRC_DIR)/Lexer.h
 	@mkdir -p $(BUILD_DIR)

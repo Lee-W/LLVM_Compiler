@@ -1,6 +1,6 @@
 int x ;
 
-int plus ( int a , int b ) {
+int plus ( int a , int b , int d[]) {
     int c ;
     c = a + b ;
     return 0 ;

@@ -1,6 +1,7 @@
 #include "ParserGenerator.h"
 #include "Parser.h"
 #include "Lexer.h"
+#include "SemanticAnalyzer.h"
 using namespace std;
 
 vector<Node> parseTree;
@@ -16,12 +17,9 @@ int main(int argc, const char *argv[])
     } else {
         setupParseTree(argv[1], argv[2]);
 
-        for (auto i : parseTree) {
-            for (int j = 0; j < i.layer; j++)
-                cout << "  ";
-            cout << left << setw(15) << i.layer
-                 << left << setw(15) << i.symbol << endl;
-        }
+        SemanticAnalyzer sa;
+        sa.analysis(parseTree);
+        sa.printSymbolTable();
     }
 
     return 0;
@@ -59,5 +57,6 @@ void setupParseTree(string grammarFile, string programFile)
     p.setNonTerminals(pg.getNonTerminals());
     p.generateParseTree(allTokens);
     parseTree = p.getParseTree();
+    // p.printTree();
 }
 

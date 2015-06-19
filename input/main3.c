@@ -1,9 +1,10 @@
-int main()
+int main(int a[])
 {
-    int x;
-    /* if ( x ) { */
-        /* int c; */
-    /* } else { */
-
-    /* } */
+    if (true) {
+        double a;
+        a = 5.5;
+    } else {
+        double b;
+        b = 5;
+    }
 }
