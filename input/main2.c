@@ -13,9 +13,11 @@ int main (  ) {
     x = plus( y [ 0 ] , y [ 1 ] ) ;
     if ( x ) {
         double a;
+        a = 0;
     }
     else {
         float b ;
+        b = 0;
     }
     print x ;
 }
