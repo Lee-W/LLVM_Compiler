@@ -57,6 +57,6 @@ void setupParseTree(string grammarFile, string programFile)
     p.setNonTerminals(pg.getNonTerminals());
     p.generateParseTree(allTokens);
     parseTree = p.getParseTree();
-    p.printTree();
+    // p.printTree();
 }
 

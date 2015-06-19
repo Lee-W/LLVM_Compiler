@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <stack>
 #include "Symbol.h"
 #include "Node.h"
 
@@ -14,6 +15,7 @@ private:
     multimap<int, Symbol> symbolTable;
 
     void readNextLayer(vector<Node>::iterator& it, string& symbol);
+    void tableInsert(stack<Symbol>& s);
 };
 
 #endif
