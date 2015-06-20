@@ -61,7 +61,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
                 isArray = true;
         } else if (curSymbol == "ParamDeclListTail'") {
 
-            // symbolStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
             paraStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
             isParDecl = false;
             isArray = false;
@@ -74,7 +73,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
         if (s.symbol != "{") {
             symbolTable.insert(make_pair(s.scope, Symbol(s.scope, s.symbol, s.type, s.isArray, s.isFunction)));
-            // cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
         }
     }
 
@@ -100,15 +98,21 @@ void SemanticAnalyzer::printSymbolTable()
 }
 
 void SemanticAnalyzer::tableInsert(stack<Symbol>& s) {
-    Symbol sym;
-    while (sym.symbol != "{" && !s.empty()) {
-        sym = s.top();
+    Symbol topSymbol;
+    while (topSymbol.symbol != "{" && !s.empty()) {
+        topSymbol = s.top();
         s.pop();
 
-        if (sym.symbol != "{") {
-            symbolTable.insert(make_pair(sym.scope, Symbol(sym.scope, sym.symbol, sym.type, sym.isArray, sym.isFunction)));
-            // cout << sym.scope << "\t" << sym.symbol << "\t" << sym.type << "\t" << sym.isArray << "\t" << sym.isFunction << endl;
-        }
-
+        if (topSymbol.symbol != "{" && !symbolExistInSameScope(topSymbol))
+            symbolTable.insert(make_pair(topSymbol.scope, topSymbol));
     }
+}
+
+bool SemanticAnalyzer::symbolExistInSameScope(Symbol s)
+{
+    auto range = symbolTable.equal_range(s.scope);
+    for (auto i = range.first; i != range.second; ++i)
+        if (i->second.symbol == s.symbol)
+            return true;
+    return false;
 }

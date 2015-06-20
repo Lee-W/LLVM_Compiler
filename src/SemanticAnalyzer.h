@@ -16,6 +16,7 @@ private:
 
     void readNextLayer(vector<Node>::iterator& it, string& symbol);
     void tableInsert(stack<Symbol>& s);
+    bool symbolExistInSameScope(Symbol s);
 };
 
 #endif
