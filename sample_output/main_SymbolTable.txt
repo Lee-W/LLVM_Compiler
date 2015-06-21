@@ -1,0 +1,6 @@
+0	a	int	0	0
+0	main	int	0	1
+
+1	b	int	0	0
+1	c	int	0	0
+

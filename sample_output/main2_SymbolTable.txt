@@ -1,0 +1,14 @@
+0	x	int	0	0
+0	plus	int	0	1
+0	main	int	0	1
+
+1	a	int	0	0
+1	b	int	0	0
+1	c	int	0	0
+
+2	y	int	1	0
+
+3	a	double	0	0
+
+4	b	float	0	0
+

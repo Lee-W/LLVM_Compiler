@@ -1,0 +1,14 @@
+0	x	int	0	0
+0	main	int	0	1
+0	func	int	0	1
+
+1	a	int	0	0
+1	b	int	0	0
+1	c	double	0	0
+1	d	double	0	0
+1	e	int	1	0
+1	f	int	1	0
+1	g	int	0	0
+
+5	test	int	0	0
+
