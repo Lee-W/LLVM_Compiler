@@ -9,20 +9,19 @@ vector<Token> allTokens;
 
 void readProgram(string fileName);
 void setupParseTree(string grammarFile, string programFile);
-void codeGeneration(vector<Node>); 
+void codeGeneration(vector<Node>, map<int, vector<Symbol>>); 
 
 int main(int argc, const char *argv[])
 {
     if (argc != 3) {
-        cout << "Argment error" << endl;
+        cout << "Argument error" << endl;
     } else {
         setupParseTree(argv[1], argv[2]);
 
         SemanticAnalyzer sa;
         sa.analysis(parseTree);
         sa.printSymbolTable();
-        codeGeneration(parseTree, sa.getSymbolTable());
-        
+        codeGeneration(parseTree, sa.getsymbolTable());
     }
 
     return 0;

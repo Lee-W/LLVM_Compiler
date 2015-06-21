@@ -1,6 +1,8 @@
 #include<iostream>
-#include<fstream>
+#include<stdio.h>
+//#include<fstream>
 #include<vector>
+#include<map>
 #include"Node.h"
 #include"Symbol.h"
 
@@ -13,13 +15,13 @@ void printID(std::vector<Node>::iterator);
 
 void codeGeneration(vector<Node> parseTree, map<int, vector<Symbol>> symbolTable) 
 {
-	fstream llFile;
-	llFile.open("output.ll",ios::out);
+	FILE* llFile;
+	llFile = fopen("output.ll","w");
 	
 	//set up print function
-	llFile << '@istr = private constant[4 x i8] c"%d\0A\00"' << endl;
-	llFile << '@fstr = private constant[4 x i8] c"%f\0A\00"' << endl;
-	llFile << "declare i32 @printf(i8*, ...)" << endl;
+	fprintf(llFile, "@istr = private constant[4 x i8] c\"%%d\\0A\\00\"\n");
+	fprintf(llFile, "@fstr = private constant[4 x i8] c\"%%f\\0A\\00\"\n");
+	fprintf(llFile, "declare i32 @printf(i8*, ...)\n");
 	/*
 	// Some flag
 
@@ -38,6 +40,7 @@ void codeGeneration(vector<Node> parseTree, map<int, vector<Symbol>> symbolTable
 			
 		else if (it->symbol == "}")		
 	}*/
+	fclose(llFile);
 }
 
 // global variable or function define
