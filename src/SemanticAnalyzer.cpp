@@ -8,6 +8,7 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
     bool isDecl = false;
     bool isParDecl = false;
     bool isFunDecl = false;
+    bool isExpr = false;
 
     string symbol;
     string type;
@@ -15,6 +16,10 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
     stack<Symbol> symbolStack;
     stack<Symbol> paraStack;
+
+    bool isRightHandSide = false;
+    string leftHandSide;
+    vector<string> rightHandSide;
 
     string curSymbol;
     for (auto it = parseTree.begin(); it != parseTree.end(); ++it) {
@@ -68,11 +73,15 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             if (curSymbol == "[")
                 isArray = true;
         } else if (curSymbol == "ParamDeclListTail'") {
-
             paraStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
             tableInsert(Symbol(scope+1, symbol, type, isArray, isFunDecl));
+
             isParDecl = false;
             isArray = false;
+        } else if (curSymbol == "Expr") {
+            isExpr = true;
+        } else if (curSymbol == "ExprIdTail") {
+
         }
     }
 
