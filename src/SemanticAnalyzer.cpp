@@ -75,13 +75,7 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
     while (!symbolStack.empty()) {
         Symbol s = symbolStack.top();
         symbolStack.pop();
-
-        // if (s.symbol != "{") {
-            // symbolTable[s.scope].push_back(s);
-            // symbolTable.insert(make_pair(s.scope, Symbol(s.scope, s.symbol, s.type, s.isArray, s.isFunction)));
-        // }
     }
-
 }
 
 void SemanticAnalyzer::readNextLayer(vector<Node>::iterator& it, string& symbol)
@@ -101,9 +95,9 @@ void SemanticAnalyzer::printSymbolTable()
 
 void SemanticAnalyzer::tableInsert(Symbol s)
 {
-    if (!symbolExistInSameScope(s)) {
+    if (!symbolExistInSameScope(s))
         symbolTable[s.scope].push_back(s);
-    } else {
+    else {
         cout << "Already declaraed" << endl;
     }
 }
@@ -113,19 +107,14 @@ void SemanticAnalyzer::tableInsert(stack<Symbol>& s) {
     while (topSymbol.symbol != "{" && !s.empty()) {
         topSymbol = s.top();
         s.pop();
-
-        // if (topSymbol.symbol != "{" && !symbolExistInSameScope(topSymbol))
-            // symbolTable[topSymbol.scope].push_back(topSymbol);
     }
 }
 
 bool SemanticAnalyzer::symbolExistInSameScope(Symbol s)
 {
     vector<Symbol> symbolList = symbolTable[s.scope];
-    for (auto sym : symbolList) {
+    for (auto sym : symbolList)
         if (s.symbol == sym.symbol)
             return true;
-    }
     return false;
-
 }
