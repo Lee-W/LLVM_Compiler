@@ -9,6 +9,7 @@ vector<Token> allTokens;
 
 void readProgram(string fileName);
 void setupParseTree(string grammarFile, string programFile);
+void codeGeneration(vector<Node>); 
 
 int main(int argc, const char *argv[])
 {
@@ -20,6 +21,8 @@ int main(int argc, const char *argv[])
         SemanticAnalyzer sa;
         sa.analysis(parseTree);
         sa.printSymbolTable();
+        codeGeneration(parseTree, sa.getSymbolTable());
+        
     }
 
     return 0;
@@ -57,6 +60,6 @@ void setupParseTree(string grammarFile, string programFile)
     p.setNonTerminals(pg.getNonTerminals());
     p.generateParseTree(allTokens);
     parseTree = p.getParseTree();
-    // p.printTree();
+    p.exportTree();
 }
 

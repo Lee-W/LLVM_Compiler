@@ -97,6 +97,11 @@ void SemanticAnalyzer::printSymbolTable()
     }
 }
 
+map<int, vector<Symbol>> SemanticAnalyzer::getsymbolTable()
+{
+	return symbolTable;
+}
+
 void SemanticAnalyzer::tableInsert(Symbol s)
 {
     if (!symbolExistInSameScope(s))

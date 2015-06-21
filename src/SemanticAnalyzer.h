@@ -11,6 +11,7 @@ class SemanticAnalyzer {
 public:
     void analysis(vector<Node> parseTree);
     void printSymbolTable();
+    map<int, vector<Symbol>> getsymbolTable();
 private:
     map<int, vector<Symbol>> symbolTable;
 
