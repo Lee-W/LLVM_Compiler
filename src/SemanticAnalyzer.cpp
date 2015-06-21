@@ -72,7 +72,8 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
         symbolStack.pop();
 
         if (s.symbol != "{") {
-            symbolTable.insert(make_pair(s.scope, Symbol(s.scope, s.symbol, s.type, s.isArray, s.isFunction)));
+            symbolTable[s.scope].push_back(s);
+            // symbolTable.insert(make_pair(s.scope, Symbol(s.scope, s.symbol, s.type, s.isArray, s.isFunction)));
         }
     }
 
@@ -87,14 +88,26 @@ void SemanticAnalyzer::readNextLayer(vector<Node>::iterator& it, string& symbol)
 void SemanticAnalyzer::printSymbolTable()
 {
     int prevScope = 0;
-    for (auto entry : symbolTable) {
-        Symbol s = entry.second;
-        if (s.scope != prevScope) {
+    // Symbol s;
+    for (auto entry: symbolTable) {
+        if (entry.first != prevScope) {
             cout << endl;
+            prevScope = entry.first;
         }
-        prevScope = s.scope;
-        cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+
+        for (auto s : entry.second) {
+            cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+        }
     }
+    // int prevScope = 0;
+    // for (auto entry : symbolTable) {
+    //     Symbol s = entry.second;
+    //     if (s.scope != prevScope) {
+    //         cout << endl;
+    //     }
+    //     prevScope = s.scope;
+    //     cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+    // }
 }
 
 void SemanticAnalyzer::tableInsert(stack<Symbol>& s) {
@@ -103,16 +116,20 @@ void SemanticAnalyzer::tableInsert(stack<Symbol>& s) {
         topSymbol = s.top();
         s.pop();
 
-        if (topSymbol.symbol != "{" && !symbolExistInSameScope(topSymbol))
-            symbolTable.insert(make_pair(topSymbol.scope, topSymbol));
+        if (topSymbol.symbol != "{" && !symbolExistInSameScope(topSymbol)) {
+            symbolTable[topSymbol.scope].push_back(topSymbol);
+        }
+            // symbolTable.insert(make_pair(topSymbol.scope, topSymbol));
     }
 }
 
 bool SemanticAnalyzer::symbolExistInSameScope(Symbol s)
 {
-    auto range = symbolTable.equal_range(s.scope);
-    for (auto i = range.first; i != range.second; ++i)
-        if (i->second.symbol == s.symbol)
+    vector<Symbol> symbolList = symbolTable[s.scope];
+    for (auto sym : symbolList) {
+        if (s.symbol == sym.symbol)
             return true;
+    }
     return false;
+
 }
