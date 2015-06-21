@@ -29,7 +29,11 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
                 paraStack.pop();
             }
         } else if (curSymbol == "}") {
-            tableInsert(symbolStack);
+            Symbol topSymbol;
+            while (topSymbol.symbol != "{" && !symbolStack.empty()) {
+                topSymbol = symbolStack.top();
+                symbolStack.pop();
+            }
             scope = symbolStack.top().scope;
         } else if (curSymbol == "DeclList'" || curSymbol == "VarDecl") {
             isDecl = true;
@@ -99,14 +103,6 @@ void SemanticAnalyzer::tableInsert(Symbol s)
         symbolTable[s.scope].push_back(s);
     else {
         cout << "Already declaraed" << endl;
-    }
-}
-
-void SemanticAnalyzer::tableInsert(stack<Symbol>& s) {
-    Symbol topSymbol;
-    while (topSymbol.symbol != "{" && !s.empty()) {
-        topSymbol = s.top();
-        s.pop();
     }
 }
 
