@@ -96,6 +96,9 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             } else if (curSymbol == "[") {
                 while (curSymbol != "]")
                     readNextLayer(it, curSymbol);
+            } else if (curSymbol == "(") {
+                while (curSymbol != ")")
+                    readNextLayer(it, curSymbol);
             }
         } else if (curSymbol == ";" && isExpr) {
             isExpr =false;
