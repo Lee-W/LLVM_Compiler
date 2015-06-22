@@ -66,3 +66,5 @@ Temporary Items
 *.out
 *.app
 
+tree.txt
+output.ll
