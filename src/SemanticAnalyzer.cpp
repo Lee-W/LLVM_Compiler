@@ -167,56 +167,41 @@ void SemanticAnalyzer::exportSymbolTable(string fileName)
 
 void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
 {
-    string firstSymbol, secondSymbol;
-    string firstType, secondType;
+    Symbol firstSymbol, secondSymbol;
     if (right.size() > 1) {
-        firstSymbol = right[0];
-        secondSymbol = right[1];
-        firstType = getType(scope, firstSymbol);
-        secondType = getType(scope, secondSymbol);
+        firstSymbol = Symbol(scope, right[0], getType(scope, right[0]));
+        secondSymbol = Symbol(scope, right[1], getType(scope, right[1]));
 
-        if (firstType != secondType) {
-            cout << "warning (scope " << scope << " ):"
-                 << firstSymbol << "  " << firstType << ",  "
-                 << secondSymbol << "  " << secondType << endl;
+        if (firstSymbol.type != secondSymbol.type) {
+            printTypeWarning(firstSymbol, secondSymbol);
 
             // since there is only int and double
-            firstType = "double";
+            firstSymbol.type = "double";
         }
 
-        firstSymbol = "temp";
-
+        firstSymbol.symbol = "temp";
         for (int i = 2 ; i < right.size(); i++) {
-            secondSymbol = right[i];
-            secondType = getType(scope, secondSymbol);
-
-            if (firstType != secondType) {
-                cout << "warning (scope " << scope << " ):"
-                     << firstSymbol << "  " << firstType << ",  "
-                     << secondSymbol << "  " << secondType << endl;
+            secondSymbol = Symbol(scope, right[i], getType(scope, right[i]));
+            if (firstSymbol.type != secondSymbol.type) {
+                printTypeWarning(firstSymbol, secondSymbol);
 
                 // since there is only int and double
-                firstType = "double";
+                firstSymbol.type = "double";
             }
         }
 
-        secondSymbol = "temp";
-        secondType = firstType;
+        secondSymbol = Symbol(scope, "temp", firstSymbol.type);
     } else {
-        secondSymbol = right[0];
-        secondType = getType(scope, secondSymbol);
+        secondSymbol = Symbol(scope, right[0], getType(scope, right[0]));
     }
 
-    firstSymbol = left;
-    firstType = getType(scope, firstSymbol);
+    firstSymbol = Symbol(scope, left, getType(scope, left));
 
-    if (firstType != secondType) {
-        cout << "warning (scope " << scope << " ):"
-             << firstSymbol << "  " << firstType << ",  "
-             << secondSymbol << "  " << secondType << endl;
+    if (firstSymbol.type != secondSymbol.type) {
+        printTypeWarning(firstSymbol, secondSymbol);
 
         // since there is only int and double
-        firstType = "double";
+        firstSymbol.type = "double";
     }
 
 
@@ -228,8 +213,10 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
     // cout << accessSymbolTable(scope, left).type << endl;
 }
 
-void SemanticAnalyzer::printTypeWarning( ) {
-
+void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2) {
+    cout << "warning (scope " << s1.scope << "): "
+         << s1.symbol << "  " << s1.type << ",  "
+         << s2.symbol << "  " << s2.type << endl;
 }
 
 string SemanticAnalyzer::getType(int scope, string symbol)

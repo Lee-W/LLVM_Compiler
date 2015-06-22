@@ -23,7 +23,7 @@ private:
     bool symbolExistInSameScope(Symbol s);
 
     void checkType(string left, vector<string> right, int scope);
-    void printTypeWarning();
+    void printTypeWarning(Symbol s1, Symbol s2);
     string getType(int scope, string symbol);
     Symbol accessSymbolTable(int scope, string symbol);
     bool isID(string symbol);
