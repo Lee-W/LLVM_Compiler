@@ -88,8 +88,15 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             isArray = false;
         } else if (curSymbol == "Expr") {
             isExpr = true;
-        } else if (curSymbol == "=") {
-            isRightHandSide = true;
+        } else if (curSymbol == "ExprIdTail") {
+            readNextLayer(it, curSymbol);
+
+            if (curSymbol == "=") {
+                isRightHandSide = true;
+            } else if (curSymbol == "[") {
+                while (curSymbol != "]")
+                    readNextLayer(it, curSymbol);
+            }
         } else if (curSymbol == ";" && isExpr) {
             isExpr =false;
             isRightHandSide = false;
@@ -99,7 +106,7 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
             leftHandSide = "";
             rightHandSide.clear();
-        } else if (curSymbol == "num") {
+        } else if (curSymbol == "num" && isExpr) {
             readNextLayer(it, curSymbol);
             rightHandSide.push_back(curSymbol);
         }
@@ -204,12 +211,11 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
         firstSymbol.type = "double";
     }
 
+    cout << left << " =  ";
+    for (auto r : right)
+        cout << r << "  ";
+    cout << endl;
 
-    // cout << left << " =  ";
-    // for (auto r : right)
-    //     cout << r << "  ";
-    // cout << endl;
-    //
     // cout << accessSymbolTable(scope, left).type << endl;
 }
 
