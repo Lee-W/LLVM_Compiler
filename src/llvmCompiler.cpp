@@ -21,7 +21,8 @@ int main(int argc, const char *argv[])
         SemanticAnalyzer sa;
         sa.analysis(parseTree);
         sa.printSymbolTable();
-        codeGeneration(parseTree, sa.getsymbolTable());
+        sa.exportSymbolTable();
+        codeGeneration(parseTree, sa.getSymbolTable());
     }
 
     return 0;

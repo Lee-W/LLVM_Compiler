@@ -97,7 +97,7 @@ void SemanticAnalyzer::printSymbolTable()
     }
 }
 
-map<int, vector<Symbol>> SemanticAnalyzer::getsymbolTable()
+map<int, vector<Symbol> > SemanticAnalyzer::getSymbolTable()
 {
 	return symbolTable;
 }
@@ -118,4 +118,20 @@ bool SemanticAnalyzer::symbolExistInSameScope(Symbol s)
         if (s.symbol == sym.symbol)
             return true;
     return false;
+}
+
+void SemanticAnalyzer::exportSymbolTable(string fileName)
+{
+    ofstream outputFileStream(fileName);
+    if (outputFileStream.is_open()) {
+        for (auto entry: symbolTable) {
+            for (auto s : entry.second)
+                outputFileStream << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+            outputFileStream << endl;
+        }
+        outputFileStream.close();
+    }
+    else {
+        cout << "Cannot open file " << fileName << endl;
+    }
 }
