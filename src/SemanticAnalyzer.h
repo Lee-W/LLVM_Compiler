@@ -21,6 +21,13 @@ private:
     void readNextLayer(vector<Node>::iterator& it, string& symbol);
     void tableInsert(Symbol s);
     bool symbolExistInSameScope(Symbol s);
+
+    void checkType(string left, vector<string> right, int scope);
+    void printTypeWarning();
+    string getType(int scope, string symbol);
+    Symbol accessSymbolTable(int scope, string symbol);
+    bool isID(string symbol);
+    bool isDouble(string symbol);
 };
 
 #endif

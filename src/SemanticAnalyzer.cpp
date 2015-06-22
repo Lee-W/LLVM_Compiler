@@ -48,6 +48,14 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
         } else if (curSymbol == "id") {
             readNextLayer(it, curSymbol);
             symbol = curSymbol;
+
+            if (isExpr) {
+                if (isRightHandSide) {
+                    rightHandSide.push_back(curSymbol);
+                }
+                else
+                    leftHandSide = curSymbol;
+            }
         } else if (curSymbol == "VarDecl'") {
             readNextLayer(it, curSymbol);
             if (curSymbol == "[")
@@ -80,8 +88,20 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             isArray = false;
         } else if (curSymbol == "Expr") {
             isExpr = true;
-        } else if (curSymbol == "ExprIdTail") {
+        } else if (curSymbol == "=") {
+            isRightHandSide = true;
+        } else if (curSymbol == ";" && isExpr) {
+            isExpr =false;
+            isRightHandSide = false;
 
+            if (leftHandSide != "")
+                checkType(leftHandSide, rightHandSide, scope);
+
+            leftHandSide = "";
+            rightHandSide.clear();
+        } else if (curSymbol == "num") {
+            readNextLayer(it, curSymbol);
+            rightHandSide.push_back(curSymbol);
         }
     }
 
@@ -143,4 +163,102 @@ void SemanticAnalyzer::exportSymbolTable(string fileName)
     else {
         cout << "Cannot open file " << fileName << endl;
     }
+}
+
+void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
+{
+    string firstSymbol, secondSymbol;
+    string firstType, secondType;
+    if (right.size() > 1) {
+        firstSymbol = right[0];
+        secondSymbol = right[1];
+        firstType = getType(scope, firstSymbol);
+        secondType = getType(scope, secondSymbol);
+
+        if (firstType != secondType) {
+            cout << "warning (scope " << scope << " ):"
+                 << firstSymbol << "  " << firstType << ",  "
+                 << secondSymbol << "  " << secondType << endl;
+
+            // since there is only int and double
+            firstType = "double";
+        }
+
+        firstSymbol = "temp";
+
+        for (int i = 2 ; i < right.size(); i++) {
+            secondSymbol = right[i];
+            secondType = getType(scope, secondSymbol);
+
+            if (firstType != secondType) {
+                cout << "warning (scope " << scope << " ):"
+                     << firstSymbol << "  " << firstType << ",  "
+                     << secondSymbol << "  " << secondType << endl;
+
+                // since there is only int and double
+                firstType = "double";
+            }
+        }
+
+        secondSymbol = "temp";
+        secondType = firstType;
+    } else {
+        secondSymbol = right[0];
+        secondType = getType(scope, secondSymbol);
+    }
+
+    firstSymbol = left;
+    firstType = getType(scope, firstSymbol);
+
+    if (firstType != secondType) {
+        cout << "warning (scope " << scope << " ):"
+             << firstSymbol << "  " << firstType << ",  "
+             << secondSymbol << "  " << secondType << endl;
+
+        // since there is only int and double
+        firstType = "double";
+    }
+
+
+    // cout << left << " =  ";
+    // for (auto r : right)
+    //     cout << r << "  ";
+    // cout << endl;
+    //
+    // cout << accessSymbolTable(scope, left).type << endl;
+}
+
+void SemanticAnalyzer::printTypeWarning( ) {
+
+}
+
+string SemanticAnalyzer::getType(int scope, string symbol)
+{
+    if (isID(symbol)) {
+        return accessSymbolTable(scope, symbol).type;
+    } else if (isDouble(symbol)) {
+        return "double";
+    } else {
+        return "int";
+    }
+}
+
+Symbol SemanticAnalyzer::accessSymbolTable(int scope, string symbol)
+{
+    while (scope > -1) {
+        vector<Symbol> symbolList = symbolTable[scope];
+        for (auto s : symbolList)
+            if (s.symbol == symbol)
+                return s;
+        scope--;
+    }
+    return Symbol();
+}
+
+bool SemanticAnalyzer::isID(string symbol) {
+    return !isdigit(symbol[0]);
+}
+
+bool SemanticAnalyzer::isDouble(string symbol) {
+    return symbol.find(".") != string::npos;
 }
