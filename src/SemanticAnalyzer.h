@@ -4,12 +4,16 @@
 #include <map>
 #include <vector>
 #include <stack>
+#include <fstream>
 #include "Symbol.h"
 #include "Node.h"
 
 class SemanticAnalyzer {
 public:
     void analysis(vector<Node> parseTree);
+    map<int, vector<Symbol>> getSymbolTable();
+    void exportSymbolTable(string fileName="SymbolTable.txt");
+
     void printSymbolTable();
 private:
     map<int, vector<Symbol>> symbolTable;
