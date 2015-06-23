@@ -1,4 +1,13 @@
 int x ;
+
+int func ( )
+{
+    int test ;
+    test = 12345 ;
+    print test ;
+    return 0 ;
+}
+
 int main ( )
 {
     int a ;
@@ -34,12 +43,4 @@ int main ( )
     print x ;
     func ( ) ;
     return 0 ; 
-}
-
-int func ( )
-{
-    int test ;
-    test = 12345 ;
-    print test ;
-    return 0 ;
 }
