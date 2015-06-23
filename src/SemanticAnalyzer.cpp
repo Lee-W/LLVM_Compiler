@@ -187,9 +187,7 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
 
         if (firstSymbol.type != secondSymbol.type) {
             printTypeWarning(firstSymbol, secondSymbol);
-
-            // since there is only int and double
-            firstSymbol.type = "double";
+            firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
         }
 
         firstSymbol.symbol = "temp";
@@ -198,8 +196,7 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
             if (firstSymbol.type != secondSymbol.type) {
                 printTypeWarning(firstSymbol, secondSymbol);
 
-                // since there is only int and double
-                firstSymbol.type = "double";
+                firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
             }
         }
 
@@ -213,8 +210,7 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
     if (firstSymbol.type != secondSymbol.type) {
         printTypeWarning(firstSymbol, secondSymbol);
 
-        // since there is only int and double
-        firstSymbol.type = "double";
+        firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
     }
 
     // cout << left << " =  ";
@@ -231,13 +227,20 @@ void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2) {
 
 string SemanticAnalyzer::getType(int scope, string symbol)
 {
-    if (isID(symbol)) {
+    if (isID(symbol))
         return accessSymbolTable(scope, symbol).type;
-    } else if (isDouble(symbol)) {
+    else if (isDouble(symbol))
         return "double";
-    } else {
+    else
         return "int";
-    }
+}
+
+string SemanticAnalyzer::typeCasting(Symbol s1, Symbol s2)
+{
+    if (TYPE_PRIORITY.at(s1.type) > TYPE_PRIORITY.at(s2.type))
+        return s1.type;
+    else
+        return s2.type;
 }
 
 Symbol SemanticAnalyzer::accessSymbolTable(int scope, string symbol)
@@ -259,3 +262,7 @@ bool SemanticAnalyzer::isID(string symbol) {
 bool SemanticAnalyzer::isDouble(string symbol) {
     return symbol.find(".") != string::npos;
 }
+
+const map<string, int> SemanticAnalyzer::TYPE_PRIORITY{{"int", 1},
+                                                       {"float", 2},
+                                                       {"double", 3}};
