@@ -28,6 +28,16 @@ Symbol CodeGenerator::findType(vector<Node>::iterator it)
     return Symbol();
 }
 
+// Assuming no variables have the same name
+Symbol CodeGenerator::findSymbol(string symbol)
+{
+    for (auto entry : symbolTable)
+        for (auto sym : entry.second)
+            if (sym.symbol == symbol)
+                return sym;
+    return Symbol();
+}
+
 void CodeGenerator::printID(vector<Node>::iterator it)
 {
     Symbol target = findType(it);
@@ -165,22 +175,98 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
     fclose(llFile);
 }
 
+void CodeGenerator::testFunctions()
+{
+    vector<string> tt;
+    tt.push_back("a");
+    tt.push_back("=");
+    tt.push_back("(");
+    tt.push_back("b");
+    tt.push_back("+");
+    tt.push_back("c");
+    tt.push_back(")");
+    infixExprToPostfix(tt);
+}
+
+void CodeGenerator::handleExpr() {}
+
+vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
+{
+    vector<Symbol> prefixExpr;
+    stack<string> s;
+
+    for (auto sym : expr) {
+        if (isOperator(sym)) {
+            // the lower the prioity value, the higher the prioity
+            if (!s.empty() && s.top() != "(") {
+                while (!s.empty() &&
+                        OP_PRIORITY.at(s.top()) <= OP_PRIORITY.at(sym)) {
+                    // prefixExpr.push_back(findSymbol(s.top()));
+                    cout << s.top() << "  ";
+                    s.pop();
+                    if (!s.empty() && s.top() == "(")
+                        break;
+                }
+            }
+            s.push(sym);
+        }
+        else if (sym == "(") {
+            s.push(sym);
+        }
+        else if (sym == ")") {
+            while (s.top() != "(") {
+                if (s.top() != "(") {
+                    // prefixExpr.push_back(findSymbol(s.top()));
+                    cout << s.top() << "  ";
+                }
+                s.pop();
+            }
+        }
+        else {
+            if (sym.find("[")) {
+            }
+            else if (sym.find("(")) {
+            }
+            else {
+            }
+            // prefixExpr.push_back(findSymbol(s.top()));
+            cout << sym << "  ";
+        }
+    }
+
+    while (!s.empty()) {
+        if (s.top() != "(") {
+            // prefixExpr.push_back(findSymbol(s.top()));
+            cout << s.top() << "  ";
+        }
+        s.pop();
+    }
+
+    return prefixExpr;
+}
+
+bool CodeGenerator::isOperator(string symbol)
+{
+    return OP_PRIORITY.find(symbol) != OP_PRIORITY.end();
+}
+
 void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
 {
     symbolTable = st;
 }
 
-const static map<string, int> OP_PRIORITY{{"-", 2},
-                                          {"!", 2},
-                                          {"+", 2},
-                                          {"-", 2},
-                                          {"*", 3},
-                                          {"/", 3},
-                                          {"==", 7},
-                                          {"!=", 7},
-                                          {"<", 6},
-                                          {"<=", 6},
-                                          {">", 6},
-                                          {">=", 6},
-                                          {"&&", 11},
-                                          {"||", 12}};
+const map<string, int> CodeGenerator::OP_PRIORITY{{"-", 2},
+                                                  {"!", 2},
+                                                  {"+", 2},
+                                                  {"-", 2},
+                                                  {"*", 3},
+                                                  {"/", 3},
+                                                  {"==", 7},
+                                                  {"!=", 7},
+                                                  {"<", 6},
+                                                  {"<=", 6},
+                                                  {">", 6},
+                                                  {">=", 6},
+                                                  {"&&", 11},
+                                                  {"||", 12},
+                                                  {"=", 15}};
