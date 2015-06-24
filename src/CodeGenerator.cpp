@@ -1,16 +1,6 @@
-#include <iostream>
-#include <stdio.h>
-#include <vector>
-#include <map>
-#include "Node.h"
-#include "Symbol.h"
+#include "CodeGenerator.h"
 
-using namespace std;
-
-FILE* llFile;
-int instruction = 1;  //%1 %2 %3 %4 %5......
-
-const char* type_cast(string type)
+const char* CodeGenerator::typeCast(string type)
 {
     string ret;
     if (type == "int")
@@ -24,8 +14,7 @@ const char* type_cast(string type)
     return ret.c_str();
 }
 
-Symbol findType(vector<Node>::iterator it,
-                map<int, vector<Symbol>> symbolTable)
+Symbol CodeGenerator::findType(vector<Node>::iterator it)
 {
     string id = it->symbol;
     for (map<int, vector<Symbol>>::iterator symbols = symbolTable.begin();
@@ -39,10 +28,9 @@ Symbol findType(vector<Node>::iterator it,
     return Symbol();
 }
 
-void printID(vector<Node>::iterator it,
-             map<int, vector<Symbol>> symbolTable)
+void CodeGenerator::printID(vector<Node>::iterator it)
 {
-    Symbol target = findType(it, symbolTable);
+    Symbol target = findType(it);
     string id;
     if (target.scope == 0)  // global variable
         id = "@" + it->symbol;
@@ -67,7 +55,7 @@ void printID(vector<Node>::iterator it,
 }
 
 // global variable or function define
-void declaration(vector<Node>::iterator it)
+void CodeGenerator::declaration(vector<Node>::iterator it)
 {
     it = it + 2;
     string type = it->symbol;  // save the Type
@@ -80,30 +68,30 @@ void declaration(vector<Node>::iterator it)
         if (it->symbol == ";") {  // global variable
             if (type == "int")
                 fprintf(llFile, "@%s = global %s 0\n", id.c_str(),
-                        type_cast(type));
+                        typeCast(type));
             else if (type == "double")
                 fprintf(llFile, "@%s = global %s 0.000000e+00\n", id.c_str(),
-                        type_cast(type));
+                        typeCast(type));
             else if (type == "char")
                 fprintf(llFile, "@%s = global %s 0\n", id.c_str(),
-                        type_cast(type));
+                        typeCast(type));
         }
         else if (it->symbol == "[") {  // global array
             it = it + 2;
             fprintf(llFile, "@%s = global [%s x %s] zeroinitializer\n",
-                    id.c_str(), it->symbol.c_str(), type_cast(type));
+                    id.c_str(), it->symbol.c_str(), typeCast(type));
         }
     }
     else if (it->symbol == "FunDecl") {  // function declaration
         it = it + 3;
         if (it->symbol == "epsilon")  // No parameters
-            fprintf(llFile, "define %s @%s() ", type_cast(type), id.c_str());
+            fprintf(llFile, "define %s @%s() ", typeCast(type), id.c_str());
         else {  // with parameters
-            fprintf(llFile, "define %s @%s(", type_cast(type), id.c_str());
+            fprintf(llFile, "define %s @%s(", typeCast(type), id.c_str());
             for (; it->symbol != ")"; it++) {
                 if (it->symbol == "ParamDecl") {
                     it = it + 2;
-                    fprintf(llFile, "%s ", type_cast(it->symbol));
+                    fprintf(llFile, "%s ", typeCast(it->symbol));
                     it = it + 2;
                     fprintf(llFile, "%%%s", it->symbol.c_str());
                 }
@@ -115,7 +103,7 @@ void declaration(vector<Node>::iterator it)
     }
 }
 
-void var_decl(vector<Node>::iterator it)
+void CodeGenerator::varDecl(vector<Node>::iterator it)
 {  // local variable declartion
     it = it + 2;
     string type = it->symbol;  // save the Type
@@ -123,34 +111,31 @@ void var_decl(vector<Node>::iterator it)
     string id = it->symbol;  // save the id
     it = it + 2;
     if (it->symbol == ";") {  // variable
-        fprintf(llFile, "%%%s = alloca %s\n", id.c_str(), type_cast(type));
+        fprintf(llFile, "%%%s = alloca %s\n", id.c_str(), typeCast(type));
     }
     else if (it->symbol == "[") {  // array
         it = it + 2;
         fprintf(llFile, "%%%s = alloca [%s x %s]\n", id.c_str(),
-                it->symbol.c_str(), type_cast(type));
+                it->symbol.c_str(), typeCast(type));
     }
 }
 
-void expr(vector<Node>::iterator it,
-          map<int, vector<Symbol>> symbolTable)  // start calculation
+void CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
 {
 }
 
-void statement(vector<Node>::iterator it,
-               map<int, vector<Symbol>> symbolTable)
+void CodeGenerator::statement(vector<Node>::iterator it)
 {
     vector<Node>::iterator temp = ++it;
     if (temp->symbol == "print") {  // print id;
         temp = temp + 2;
-        printID(temp, symbolTable);
+        printID(temp);
     }
     else if (temp->symbol == "Expr") {  // Expr;
     }
 }
 
-void codeGeneration(vector<Node> parseTree,
-                    map<int, vector<Symbol>> symbolTable)
+void CodeGenerator::codeGeneration(vector<Node> parseTree)
 {
     llFile = fopen("output.ll", "w");
 
@@ -169,13 +154,18 @@ void codeGeneration(vector<Node> parseTree,
             declaration(it);
         else if (it->symbol ==
                  "VarDecl")  // declaration of variable (could be array)
-            var_decl(it);
+            varDecl(it);
         else if (it->symbol == "Stmt")  // statement is appeared
-            statement(it, symbolTable);
+            statement(it);
         else if (it->symbol == "{")
             fprintf(llFile, "{\n");
         else if (it->symbol == "}")
             fprintf(llFile, "}\n");
     }
     fclose(llFile);
+}
+
+void CodeGenerator::setSymbolTable(map<int, vector<Symbol> > st)
+{
+    symbolTable = st;
 }

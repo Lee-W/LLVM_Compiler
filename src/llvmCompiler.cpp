@@ -2,6 +2,7 @@
 #include "Parser.h"
 #include "Lexer.h"
 #include "SemanticAnalyzer.h"
+#include "CodeGenerator.h"
 using namespace std;
 
 vector<Node> parseTree;
@@ -22,7 +23,10 @@ int main(int argc, const char *argv[])
         sa.analysis(parseTree);
         // sa.printSymbolTable();
         sa.exportSymbolTable();
-        codeGeneration(parseTree, sa.getSymbolTable());
+
+        CodeGenerator cg;
+        cg.setSymbolTable(sa.getSymbolTable());
+        cg.codeGeneration(parseTree);
     }
 
     return 0;
