@@ -122,6 +122,33 @@ void CodeGenerator::varDecl(vector<Node>::iterator it)
 
 void CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
 {
+	int exprLayer = it->layer;	//save this expr's level
+	it++;
+	vector<string> expression;
+	for (;it->layer > exprLayer; it++) {
+		string thisSymbol = it->symbol;
+		if (thisSymbol == "+" || thisSymbol == "-" || thisSymbol == "*" || thisSymbol == "/" || 
+			thisSymbol == "==" || thisSymbol == "!=" || thisSymbol == "<" || thisSymbol == "<=" || 
+			thisSymbol == ">" || thisSymbol == ">=" || thisSymbol == "&&" || thisSymbol == "||" || thisSymbol == "=")	//BinOp
+			expression.push_back(thisSymbol);
+		else if (thisSymbol == "id") {
+			it++;
+			string var = it->symbol;
+			//it += 2;
+			expression.push_back(it->symbol);
+			/*
+			if (it->symbol != "(" && it->symbol != "[")	//function
+				expression.push_back(var);
+			*/
+		}
+		else if (thisSymbol == "num") {
+			it++;
+			expression.push_back(it->symbol);
+		}
+	}
+	for (vector<string>::iterator x = expression.begin(); x != expression.end(); x++)
+		cout << *x << " ";
+	cout << endl;
 }
 
 void CodeGenerator::statement(vector<Node>::iterator it)
@@ -132,6 +159,7 @@ void CodeGenerator::statement(vector<Node>::iterator it)
         printID(temp);
     }
     else if (temp->symbol == "Expr") {  // Expr;
+    	expr(it);
     }
 }
 
