@@ -15,6 +15,7 @@ public:
     void setSymbolTable(map<int, vector<Symbol> > st);
     void codeGeneration(vector<Node> parseTree);
 private:
+    const static map<string, int> OP_PRIORITY;
     map<int, vector<Symbol> > symbolTable;
     FILE* llFile;
     int instruction = 1;  //%1 %2 %3 %4 %5......

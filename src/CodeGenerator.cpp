@@ -147,8 +147,8 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
     // Some flag
 
     // scan the tree to generate the code
-    for (vector<Node>::iterator it = parseTree.begin();
-         it != parseTree.end(); it++) {
+    for (vector<Node>::iterator it = parseTree.begin(); it != parseTree.end();
+         it++) {
         // Start analyzing the tree
         if (it->symbol == "DeclList'")  // declaration of variable or function
             declaration(it);
@@ -165,7 +165,22 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
     fclose(llFile);
 }
 
-void CodeGenerator::setSymbolTable(map<int, vector<Symbol> > st)
+void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
 {
     symbolTable = st;
 }
+
+const static map<string, int> OP_PRIORITY{{"-", 2},
+                                          {"!", 2},
+                                          {"+", 2},
+                                          {"-", 2},
+                                          {"*", 3},
+                                          {"/", 3},
+                                          {"==", 7},
+                                          {"!=", 7},
+                                          {"<", 6},
+                                          {"<=", 6},
+                                          {">", 6},
+                                          {">=", 6},
+                                          {"&&", 11},
+                                          {"||", 12}};
