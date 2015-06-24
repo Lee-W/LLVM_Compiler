@@ -9,6 +9,7 @@
 using namespace std;
 
 FILE* llFile;
+int instruction = 1;		//%1 %2 %3 %4 %5......
 
 const char* type_cast(string type){
 	string ret;
@@ -23,10 +24,35 @@ const char* type_cast(string type){
 	return ret.c_str();
 }
 
-
-void printID(std::vector<Node>::iterator it)
+Symbol findType(std::vector<Node>::iterator it, map<int, vector<Symbol>> symbolTable)
 {
-	
+	string id = it->symbol;
+	for (std::map<int,vector<Symbol>>::iterator symbols = symbolTable.begin(); symbols != symbolTable.end(); symbols++) {
+		for (std::vector<Symbol>::iterator go = symbols->second.begin(); go != symbols->second.end(); go++) {
+			if (go->symbol == id)
+				return *go;
+		}
+	}
+}
+
+void printID(std::vector<Node>::iterator it, map<int, vector<Symbol>> symbolTable)
+{
+	Symbol target = findType(it, symbolTable);
+	string id;
+	if (target.scope == 0)		//global variable
+		id = "@" + it->symbol;
+	else
+		id = "%" + it->symbol;
+	string type = target.type;
+	if (type == "int") {
+		fprintf(llFile, "%%%d = load i32* %s\n", instruction, id.c_str());
+		fprintf(llFile, "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @istr, i32 0, i32 0), i32 %%%d)\n", instruction);
+	}
+	else if (type == "double") {
+		fprintf(llFile, "%%%d = load double* %s\n", instruction, id.c_str());
+		fprintf(llFile, "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @fstr, i32 0, i32 0), double %%%d)\n", instruction);
+	}
+	instruction += 2;
 }
 
 // global variable or function define
@@ -58,6 +84,20 @@ void declaration(std::vector<Node>::iterator it)
 		it = it + 3;
 		if (it->symbol == "epsilon")	//No parameters
 			fprintf(llFile, "define %s @%s() ", type_cast(type), id.c_str());
+		else {		//with parameters
+			fprintf(llFile, "define %s @%s(", type_cast(type), id.c_str());
+			for (it; it->symbol != ")"; it++) {
+				if (it->symbol == "ParamDecl") {
+					it = it + 2;
+					fprintf(llFile, "%s ", type_cast(it->symbol));
+					it = it + 2;
+					fprintf(llFile, "%%%s", it->symbol.c_str());
+				}
+				else if (it->symbol == ",")
+					fprintf(llFile, ",");		
+			}
+			fprintf(llFile, ")");
+		}
 	}
 }
 
@@ -76,19 +116,28 @@ void var_decl(std::vector<Node>::iterator it) {		//local variable declartion
 	}
 }
 
-/*
-//Scan downlevel node in order to know what's next
-vector<string> scanChildren (std::vector<Node>::iterator it)
+void expr(std::vector<Node>::iterator it, map<int, vector<Symbol>> symbolTable)		//start calculation
 {
-	vector<string> children;
-}*/
+	
+}
+
+void resolve_expr(std::vector<Node>::iterator it, map<int, vector<Symbol>> symbolTable)		//resovle the expression
+{
+	end = it->layer;
+	for (it; it->layer != end; it++) {
+		if ()
+	}
+}
 
 void statement(std::vector<Node>::iterator it, map<int, vector<Symbol>> symbolTable)
 {
-	std::vector<Node>::iterator temp = it++;
-	if (temp->symbol == "print") {
-		temp = temp + 2;		
-		printID(temp);
+	std::vector<Node>::iterator temp = ++it;
+	if (temp->symbol == "print") {			//print id;
+		temp = temp + 2;
+		printID(temp, symbolTable);
+	}
+	else if (temp->symbol == "Expr") {		//Expr;
+		resolve_expr(it,symbolTable);
 	}
 }
 
