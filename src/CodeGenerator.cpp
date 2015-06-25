@@ -225,6 +225,7 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
 
     it += 2;
     exprCode = expr(it);
+    cmp = exprCode.back().substr(0, exprCode.back().find(" "));
     trueLabel = ++instruction;
 
     it++;
