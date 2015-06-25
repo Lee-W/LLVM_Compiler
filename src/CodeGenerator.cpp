@@ -357,7 +357,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand2.type = "int";
                     instruction++;
 
-                    line << "%" << instruction << " = i32 " << operand2.symbol << "\n";
+                    line << "%" << instruction << " = add i32 0, " << operand2.symbol << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -369,7 +369,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     instruction++;
 
 
-                    line << "%" << instruction << " = fpext float " << operand2.symbol << " to double\n",
+                    line << "%" << instruction << " = fpext float " << operand2.symbol << " to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -412,7 +412,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand1.type = "int";
                     instruction++;
 
-                    line << "%" << instruction << " = i32 " << operand1.symbol << "\n";
+                    line << "%" << instruction << " = add i32 0, " << operand1.symbol << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -422,7 +422,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand1.type =
                         "double";  // need to cast to LLVM double type
                     instruction++;
-                    line << "%" << instruction << " = fpext float " << operand1.symbol << " to double\n",
+                    line << "%" << instruction << " = fpext float " << operand1.symbol << " to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -718,7 +718,10 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                 }
                 else 
                 	instruction--;
-                line << "store " << typeCast(operand1.type) << " " << operand2.symbol << ", " << typeCast(operand1.type) << "* " << operand1.symbol << "\n";
+                if (operand1.scope == 0)
+                	line << "store " << typeCast(operand1.type) << " " << operand2.symbol << ", " << typeCast(operand1.type) << "* @" << operand1.symbol << "\n";
+                else
+                	line << "store " << typeCast(operand1.type) << " " << operand2.symbol << ", " << typeCast(operand1.type) << "* %" << operand1.symbol << "\n";
                 exprCode.push_back(line.str());
                 line.str("");
             }
