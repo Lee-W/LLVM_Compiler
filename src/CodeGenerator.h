@@ -26,7 +26,9 @@ private:
     void varDecl(vector<Node>::iterator it);
     void expr(vector<Node>::iterator it);
     void statement(vector<Node>::iterator it);
+    void ifElse(vector<Node>::iterator it);
     void printID(vector<Node>::iterator it);
+    void whileStatement(vector<Node>::iterator it);
     const char* typeCast(string type);
     Symbol findType(vector<Node>::iterator it);
     Symbol findSymbol(string symbol);

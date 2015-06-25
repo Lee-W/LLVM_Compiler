@@ -174,6 +174,83 @@ void CodeGenerator::statement(vector<Node>::iterator it)
     else if (temp->symbol == "Expr") {  // Expr;
         expr(it);
     }
+    else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
+        ifElse(it);
+    }
+    else if (temp->symbol == "while") {  // while ( Expr ) Stmt
+        whileStatement(it);
+    }
+}
+
+void CodeGenerator::whileStatement(vector<Node>::iterator it)
+{
+    string cmp;
+    int exprLabel, stmtLabel, originLabel;
+    exprLabel = ++instruction;
+    stmtLabel = ++instruction;
+    originLabel = ++instruction;
+
+    fprintf(llFile, "br label %%%d\n", exprLabel);
+
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        exprLabel);
+    it += 2;
+    expr(it);
+    // TODO: assign cmp
+    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(), stmtLabel,
+            originLabel);
+
+    it++;
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        stmtLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d\n", exprLabel);
+
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        originLabel);
+}
+
+void CodeGenerator::ifElse(vector<Node>::iterator it)
+{
+    string cmp;
+    int ifLabel, elseLabel, originLabel;
+    ifLabel = ++instruction;
+    elseLabel = ++instruction;
+    originLabel = ++instruction;
+
+    it += 2;
+    expr(it);
+    // TODO : assign cmp
+
+    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
+            ifLabel, elseLabel);
+
+    it++;
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        ifLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d\n", originLabel);
+
+    it++;
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        elseLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d\n", originLabel);
+
+    fprintf(
+        llFile,
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
+        originLabel);
 }
 
 void CodeGenerator::codeGeneration(vector<Node> parseTree)
@@ -241,7 +318,8 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             s.pop();
             if (operand2.isFunction) {
                 // TODO: handle expr in function
-            } else if (operand2.isArray) {
+            }
+            else if (operand2.isArray) {
                 // TODO: handle expr in array
             } else if (operand2.type == "") {	//it is constant
             	operand2.isConstant = true;
@@ -274,7 +352,8 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             s.pop();
             if (operand1.isFunction) {
                 // TODO: handle expr in function
-            } else if (operand1.isArray) {
+            }
+            else if (operand1.isArray) {
                 // TODO: handle expr in array
             } else if (operand1.type == "") {	//it is constant
             	operand1.isConstant = true;
@@ -319,8 +398,9 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             	}
             }
 
-            //cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t" << operand2.symbol << endl;
             instruction++;
+            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t"
+                 << operand2.symbol << endl;
             if (sym.symbol == "+") {
                 if (operand1.type == "int") {
                 	fprintf(llFile, "%%%d = add nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
@@ -478,6 +558,8 @@ vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
                     prefixExpr.push_back(exprSymbol);
                     s.pop();
                     if (!s.empty() && s.top() == "(")
+                        break;
+                    else if (s.empty())
                         break;
                 }
             }
