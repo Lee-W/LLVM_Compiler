@@ -26,7 +26,7 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
 }
 
 // global variable or function define
-vector<string> CodeGenerator::declaration(vector<Node>::iterator it)
+vector<string> CodeGenerator::declaration(vector<Node>::iterator& it)
 {
     vector<string> declCode;
 
@@ -90,7 +90,7 @@ const char* CodeGenerator::typeCast(string type)
 }
 
 // local variable declartion
-vector<string> CodeGenerator::varDecl(vector<Node>::iterator it)
+vector<string> CodeGenerator::varDecl(vector<Node>::iterator& it)
 {
     vector<string> varDeclCode;
     stringstream line;
@@ -111,29 +111,36 @@ vector<string> CodeGenerator::varDecl(vector<Node>::iterator it)
     return varDeclCode;
 }
 
-vector<string> CodeGenerator::statement(vector<Node>::iterator it)
+vector<string> CodeGenerator::statement(vector<Node>::iterator& it)
 {
     vector<string> stmtCode;
 
     vector<Node>::iterator temp = ++it;
+    cout << "0statement " << temp->symbol << endl;
     if (temp->symbol == "print") {  // print id;
         temp = temp + 2;
         appendVectors(stmtCode, printID(temp));
+        it += 3;
     }
     else if (temp->symbol == "Expr") {  // Expr;
         appendVectors(stmtCode, expr(it));
+        ++it;
     }
     else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
         appendVectors(stmtCode, ifElse(it));
     }
     else if (temp->symbol == "while") {  // while ( Expr ) Stmt
         appendVectors(stmtCode, whileStatement(it));
+    } else if (temp->symbol == "return") {
+        // TODO: return 
+    } else if (temp->symbol == "Block") {
+        appendVectors(stmtCode, block(it));
     }
 
     return stmtCode;
 }
 
-vector<string> CodeGenerator::printID(vector<Node>::iterator it)
+vector<string> CodeGenerator::printID(vector<Node>::iterator& it)
 {
     vector<string> printCode;
     stringstream line;
@@ -157,6 +164,7 @@ vector<string> CodeGenerator::printID(vector<Node>::iterator it)
     }
     printCode.push_back(line.str());
     instruction += 2;
+
     return printCode;
 }
 
@@ -174,7 +182,7 @@ Symbol CodeGenerator::findType(vector<Node>::iterator it)
     return Symbol();
 }
 
-vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
+vector<string> CodeGenerator::expr(vector<Node>::iterator& it)  // start calculation
 {
     // TODO : add value to exprCode
     vector<string> exprCode;
@@ -204,7 +212,14 @@ vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculat
             it++;
             expression.push_back(it->symbol);
         }
+        // else if (thisSymbol == "(") {
+        //     expression.push_back(it->symbol);
+        // }
+        // else if (thisSymbol == ")") {
+        //     expression.push_back(it->symbol);
+        // }
     }
+    it--;
 //    for (vector<string>::iterator x = expression.begin(); x != expression.end();
 //         x++)
 //        cout << *x << " ";
@@ -213,7 +228,7 @@ vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculat
     return exprCode;
 }
 
-vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
+vector<string> CodeGenerator::ifElse(vector<Node>::iterator& it)
 {
     vector<string> code;
     stringstream line;
@@ -229,11 +244,12 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     cmp = exprCode.back().substr(0, exprCode.back().find(" "));
     trueLabel = ++instruction;
 
-    // it++;
+    it += 2;
     stmtCode1 = statement(it);
     falseLabel = ++instruction;
 
-    it++;
+    cout << "1Why " << it-> symbol << endl;
+    it += 2;
     stmtCode2 = statement(it);
     originLabel = ++instruction;
 
@@ -267,7 +283,7 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     return code;
 }
 
-vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
+vector<string> CodeGenerator::whileStatement(vector<Node>::iterator& it)
 {
     vector<string> code;
     stringstream line;
@@ -289,7 +305,7 @@ vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
     originLabel = ++instruction;
 
 
-    line << "br label " << exprLabel << "\n";
+    line << "br label %" << exprLabel << "\n";
     code.push_back(line.str());
     line.str("");
 
@@ -398,7 +414,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand1.type = "int";
                     instruction++;
 
-                    line << "store i32 " << operand1.symbol << " = i32 " << operand1.symbol  << "\n";
+                    line << "%" << instruction << " = i32 " << operand1.symbol << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -782,6 +798,36 @@ vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
     }
 
     return prefixExpr;
+}
+
+vector<string> CodeGenerator::block(vector<Node>::iterator& it)
+{
+    vector<string> blockCode;
+
+    ++it;
+
+    ++it;
+    while (it->symbol == "VarDeclList") {
+        ++it;
+        if (it->symbol == "VarDecl") {
+            appendVectors(blockCode, varDecl(it));
+            ++it;
+        }
+    }
+
+    ++it;
+    while (it->symbol == "StmtList") {
+        ++it;
+        cout << "0block " << it->symbol << endl;
+        appendVectors(blockCode, statement(it));
+        cout << "1block " << it->symbol << endl;
+        it += 2;
+        cout << "2block " << it->symbol << endl;
+    }
+    ++it;
+    // cout << "block " << it->symbol << endl;
+
+    return blockCode;
 }
 
 // Assuming no variables have the same name

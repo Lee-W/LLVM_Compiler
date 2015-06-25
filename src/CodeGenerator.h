@@ -25,13 +25,14 @@ private:
     map<int, vector<Symbol> > symbolTable;
     int instruction = 0;  //%1 %2 %3 %4 %5......
 
-    vector<string> declaration(vector<Node>::iterator it);
-    vector<string> varDecl(vector<Node>::iterator it);
-    vector<string> expr(vector<Node>::iterator it);
-    vector<string> statement(vector<Node>::iterator it);
-    vector<string> ifElse(vector<Node>::iterator it);
-    vector<string> printID(vector<Node>::iterator it);
-    vector<string> whileStatement(vector<Node>::iterator it);
+    vector<string> declaration(vector<Node>::iterator& it);
+    vector<string> varDecl(vector<Node>::iterator& it);
+    vector<string> expr(vector<Node>::iterator& it);
+    vector<string> statement(vector<Node>::iterator& it);
+    vector<string> ifElse(vector<Node>::iterator& it);
+    vector<string> printID(vector<Node>::iterator& it);
+    vector<string> whileStatement(vector<Node>::iterator& it);
+    vector<string> block(vector<Node>::iterator& it);
     const char* typeCast(string type);
     Symbol findType(vector<Node>::iterator it);
     Symbol findSymbol(string symbol);
