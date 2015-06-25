@@ -116,7 +116,6 @@ vector<string> CodeGenerator::statement(vector<Node>::iterator& it)
     vector<string> stmtCode;
 
     vector<Node>::iterator temp = ++it;
-    cout << "0statement " << temp->symbol << endl;
     if (temp->symbol == "print") {  // print id;
         temp = temp + 2;
         appendVectors(stmtCode, printID(temp));
@@ -248,7 +247,6 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator& it)
     stmtCode1 = statement(it);
     falseLabel = ++instruction;
 
-    cout << "1Why " << it-> symbol << endl;
     it += 2;
     stmtCode2 = statement(it);
     originLabel = ++instruction;
@@ -818,11 +816,8 @@ vector<string> CodeGenerator::block(vector<Node>::iterator& it)
     ++it;
     while (it->symbol == "StmtList") {
         ++it;
-        cout << "0block " << it->symbol << endl;
         appendVectors(blockCode, statement(it));
-        cout << "1block " << it->symbol << endl;
         it += 2;
-        cout << "2block " << it->symbol << endl;
     }
     ++it;
     // cout << "block " << it->symbol << endl;
