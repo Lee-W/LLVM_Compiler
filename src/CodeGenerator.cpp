@@ -239,22 +239,21 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     appendVectors(code, exprCode);
 
     line << "br i1 %" << cmp << ", label %" << trueLabel << ", label %" << falseLabel <<"\n";
-    code.push(line);
+    code.push_back(line.str());
     line.str("");
 
     line << "\n; <label>:%\n" << trueLabel;
-    code.push(line);
+    code.push_back(line.str());
     line.str("");
     appendVectors(code, stmtCode1);
 
-    line << "\n; <label>:%\n" << elseLabel;
-    code.push(line);
+    line << "\n; <label>:%\n" << falseLabel;
+    code.push_back(line.str());
     line.str("");
     appendVectors(code, stmtCode2);
 
-
     line << "\n; <label>:%\n" << originLabel;
-    code.push(line);
+    code.push_back(line.str());
     line.str("");
 
     return code;
