@@ -174,21 +174,57 @@ void CodeGenerator::statement(vector<Node>::iterator it)
     else if (temp->symbol == "Expr") {  // Expr;
         expr(it);
     }
-    else if (temp->symbol == "if") {
+    else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
         ifElse(it);
     }
+    else if (temp->symbol == "while") {  // while ( Expr ) Stmt
+        whileStatement(it);
+    }
+}
+
+void CodeGenerator::whileStatement(vector<Node>::iterator it)
+{
+    string cmp;
+    int exprLabel, stmtLabel, originLabel;
+    exprLabel = ++instruction;
+    stmtLabel = ++instruction;
+    originLabel = ++instruction;
+
+    fprintf(llFile, "br label %%%d", exprLabel);
+
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        exprLabel);
+    it += 2;
+    expr(it);
+    // TODO: assign cmp
+    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(), stmtLabel,
+            originLabel);
+
+    it++;
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        stmtLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d", exprLabel);
+
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        originLabel);
 }
 
 void CodeGenerator::ifElse(vector<Node>::iterator it)
 {
     string cmp;
     int ifLabel, elseLabel, originLabel;
-
     ifLabel = ++instruction;
     elseLabel = ++instruction;
     originLabel = ++instruction;
 
-    it = it + 2;
+    it += 2;
     expr(it);
     // TODO : assign cmp
 
@@ -196,22 +232,25 @@ void CodeGenerator::ifElse(vector<Node>::iterator it)
             ifLabel, elseLabel);
 
     it++;
-    fprintf(llFile,
-            "; <label>:%%%d                                       ; preds = %%0",
-            ifLabel);
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        ifLabel);
     statement(it);
     fprintf(llFile, "br label %%%d", originLabel);
 
     it++;
-    fprintf(llFile,
-            "; <label>:%%%d                                       ; preds = %%0",
-            elseLabel);
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        elseLabel);
     statement(it);
     fprintf(llFile, "br label %%%d", originLabel);
 
-    fprintf(llFile,
-            "; <label>:%%%d                                       ; preds = %%0",
-            originLabel);
+    fprintf(
+        llFile,
+        "; <label>:%%%d                                       ; preds = %%0\n",
+        originLabel);
 }
 
 void CodeGenerator::codeGeneration(vector<Node> parseTree)
