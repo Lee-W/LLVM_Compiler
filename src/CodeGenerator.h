@@ -23,7 +23,7 @@ private:
 
     vector<string> llvmCode;
     map<int, vector<Symbol> > symbolTable;
-    int instruction = 1;  //%1 %2 %3 %4 %5......
+    int instruction = 0;  //%1 %2 %3 %4 %5......
 
     vector<string> declaration(vector<Node>::iterator it);
     vector<string> varDecl(vector<Node>::iterator it);

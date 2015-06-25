@@ -671,10 +671,26 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                 result.type = "int";
             }
             else if (sym.symbol == "=") {
-                // TODO: generate llvm code
+                if (operand1.type != operand2.type) {		//type conversion
+                	if (operand1.type == "int") {
+                		line << "%" << instruction << " fptosi double " << operand2.symbol << " to i32" << "\n";
+                		exprCode.push_back(line.str());
+                		line.str("");
+                		operand2.symbol = "%" + to_string(instruction);
+                	} else if (operand1.type == "double") {
+                		line << "%" << instruction << " sitofp i32 " << operand2.symbol << " to double" << "\n";
+                		exprCode.push_back(line.str());
+                		line.str("");
+                		operand2.symbol = "%" + to_string(instruction);
+                	}
+                }
+                else 
+                	instruction--;
+                line << "store " << typeCast(operand1.type) << " " << operand2.symbol << ", " << typeCast(operand1.type) << "* " << operand1.symbol << "\n";
+                exprCode.push_back(line.str());
+                line.str("");
             }
-            // TODO: assign meaningful symbol instead of temp
-            //result = Symbol("temp", "Test");  // Test is type
+            
             s.push(result);
         }
     }
