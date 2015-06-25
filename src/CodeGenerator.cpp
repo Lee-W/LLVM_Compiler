@@ -239,21 +239,27 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
 
     appendVectors(code, exprCode);
 
-    line << "br i1 %" << cmp << ", label %" << trueLabel << ", label %" << falseLabel <<"\n";
+    line << "br i1 " << cmp << ", label %" << trueLabel << ", label %" << falseLabel <<"\n";
     code.push_back(line.str());
     line.str("");
 
-    line << "\n; <label>:%\n" << trueLabel;
+    line << "\n; <label>:" << trueLabel << "\n";
     code.push_back(line.str());
     line.str("");
     appendVectors(code, stmtCode1);
+    line << "br label %" << originLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
 
-    line << "\n; <label>:%\n" << falseLabel;
+    line << "\n; <label>:" << falseLabel << "\n";
     code.push_back(line.str());
     line.str("");
     appendVectors(code, stmtCode2);
+    line << "br label %" << originLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
 
-    line << "\n; <label>:%\n" << originLabel;
+    line << "\n; <label>:" << originLabel << "\n";
     code.push_back(line.str());
     line.str("");
 
@@ -282,21 +288,27 @@ vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
     originLabel = ++instruction;
 
 
+    line << "br label " << exprLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+
+    line << "\n; <label>:" << exprLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+    appendVectors(code, exprCode);
+    line << "br i1 " << cmp << ", label %" << stmtLabel << ", label %" << originLabel <<"\n";
+    code.push_back(line.str());
+    line.str("");
+
+    line << "\n; <label>:" << stmtLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+    appendVectors(code, stmtCode);
     line << "br label %" << exprLabel << "\n";
     code.push_back(line.str());
     line.str("");
 
-    line << "\n; <label>:%" << exprLabel << "\n";
-    code.push_back(line.str());
-    line.str("");
-    appendVectors(code, expr);
-
-    line << "\n; <label>:%" << stmtLabel << "\n";
-    code.push_back(line.str());
-    line.str("");
-    appendVectors(code, stmtCode);
-
-    line << "\n; <label>:%" << originLabel << "\n";
+    line << "\n; <label>:" << originLabel << "\n";
     code.push_back(line.str());
     line.str("");
 
@@ -429,7 +441,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     instruction++;
 
 
-                    line << "%" << instruction << " =  sitofp i32 " << operand1.symbol <<"* to double\n";
+                    line << "%" << instruction << " = sitofp i32 " << operand1.symbol <<"* to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -439,7 +451,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                 else if (operand2.type == "int") {  // operand2 type conversion
                     instruction++;
 
-                    line << "%" << instruction << " =  sitofp i32 " << operand2.symbol <<"* to double\n";
+                    line << "%" << instruction << " = sitofp i32 " << operand2.symbol <<"* to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
