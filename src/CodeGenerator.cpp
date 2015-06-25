@@ -236,7 +236,7 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     stmtCode2 = statement(it);
     originLabel = ++instruction;
 
-    // TODO : assign cmp
+
     appendVectors(code, exprCode);
 
     line << "br i1 %" << cmp << ", label %" << trueLabel << ", label %" << falseLabel <<"\n";
@@ -265,36 +265,41 @@ vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
     vector<string> code;
     stringstream line;
 
+    vector<string> exprCode, stmtCode;
+
     string cmp;
     int exprLabel, stmtLabel, originLabel;
+
     exprLabel = ++instruction;
+    it += 2;
+    exprCode = expr(it);
+    cmp = exprCode.back().substr(0, exprCode.back().find(" "));
+
     stmtLabel = ++instruction;
+    it++;
+    statement(it);
+
     originLabel = ++instruction;
 
-    // fprintf(llFile, "br label %%%d\n", exprLabel);
-    //
-    // fprintf(llFile,
-    //         "\n; <label>:%%%d                                       ; preds = "
-    //         "%%0\n",
-    //         exprLabel);
-    // it += 2;
-    // expr(it);
-    // // TODO: assign cmp
-    // fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
-    //         stmtLabel, originLabel);
-    //
-    // it++;
-    // fprintf(llFile,
-    //         "\n; <label>:%%%d                                       ; preds = "
-    //         "%%0\n",
-    //         stmtLabel);
-    // statement(it);
-    // fprintf(llFile, "br label %%%d\n", exprLabel);
-    //
-    // fprintf(llFile,
-    //         "\n; <label>:%%%d                                       ; preds = "
-    //         "%%0\n",
-    //         originLabel);
+
+    line << "br label %" << exprLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+
+    line << "\n; <label>:%" << exprLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+    appendVectors(code, expr);
+
+    line << "\n; <label>:%" << stmtLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+    appendVectors(code, stmtCode);
+
+    line << "\n; <label>:%" << originLabel << "\n";
+    code.push_back(line.str());
+    line.str("");
+
     return code;
 }
 
