@@ -17,8 +17,10 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
             appendVectors(llvmCode,varDecl(it));
         else if (it->symbol == "Stmt")  // statement is appeared
             appendVectors(llvmCode, statement(it));
-        else if (it->symbol == "{")
+        else if (it->symbol == "{") {
             llvmCode.push_back("{\n");
+            instruction = 0;
+        }
         else if (it->symbol == "}")
             llvmCode.push_back("}\n");
     }
