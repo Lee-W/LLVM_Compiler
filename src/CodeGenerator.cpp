@@ -398,7 +398,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand1.type = "int";
                     instruction++;
 
-                    line << "%" << instruction << " = i32 " << operand1.symbol  << "\n";
+                    line << "store i32 " << operand1.symbol << " = i32 " << operand1.symbol  << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
