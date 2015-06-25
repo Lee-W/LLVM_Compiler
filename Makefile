@@ -11,6 +11,10 @@ SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 HEADERS := $(wildcard $(SRC_DIR)/*.h)
 OBJS := $(subst $(SRC_DIR),$(BUILD_DIR), $(SOURCES:.cpp=.o))
 
+all: update build
+
+build: $(BIN_DIR)/$(TARGET)
+
 $(BIN_DIR)/$(TARGET): $(SRC_DIR)/llvmCompiler.cpp \
 					  $(BUILD_DIR)/ParserGenerator.o \
 					  $(BUILD_DIR)/Parser.o \
@@ -44,6 +48,9 @@ $(BUILD_DIR)/ParserGenerator.o: $(SRC_DIR)/ParserGenerator.cpp $(SRC_DIR)/Parser
 $(BUILD_DIR)/CodeGenerator.o: $(SRC_DIR)/CodeGenerator.cpp $(SRC_DIR)/CodeGenerator.h
 	@mkdir -p $(BUILD_DIR)
 	$(CC) -c -o $@ $< $(CFLAG)
+
+update:
+	@git pull &> .pull_log 
 
 .PHONY: clean
 clean:
