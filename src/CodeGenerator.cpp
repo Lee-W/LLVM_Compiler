@@ -190,11 +190,11 @@ void CodeGenerator::whileStatement(vector<Node>::iterator it)
     stmtLabel = ++instruction;
     originLabel = ++instruction;
 
-    fprintf(llFile, "br label %%%d", exprLabel);
+    fprintf(llFile, "br label %%%d\n", exprLabel);
 
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         exprLabel);
     it += 2;
     expr(it);
@@ -205,14 +205,14 @@ void CodeGenerator::whileStatement(vector<Node>::iterator it)
     it++;
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         stmtLabel);
     statement(it);
-    fprintf(llFile, "br label %%%d", exprLabel);
+    fprintf(llFile, "br label %%%d\n", exprLabel);
 
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         originLabel);
 }
 
@@ -228,28 +228,28 @@ void CodeGenerator::ifElse(vector<Node>::iterator it)
     expr(it);
     // TODO : assign cmp
 
-    fprintf(llFile, "br i1 %%%s, label %%true%d, label %%end%d\n", cmp.c_str(),
+    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
             ifLabel, elseLabel);
 
     it++;
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         ifLabel);
     statement(it);
-    fprintf(llFile, "br label %%%d", originLabel);
+    fprintf(llFile, "br label %%%d\n", originLabel);
 
     it++;
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         elseLabel);
     statement(it);
-    fprintf(llFile, "br label %%%d", originLabel);
+    fprintf(llFile, "br label %%%d\n", originLabel);
 
     fprintf(
         llFile,
-        "; <label>:%%%d                                       ; preds = %%0\n",
+        "\n; <label>:%%%d                                       ; preds = %%0\n",
         originLabel);
 }
 
