@@ -1,5 +1,81 @@
 #include "CodeGenerator.h"
 
+void CodeGenerator::codeGeneration(vector<Node> parseTree)
+{
+    // set up print function
+    llvmCode.push_back("@istr = private constant[4 x i8] c\"%%d\\0A\\00\"\n");
+    llvmCode.push_back("@fstr = private constant[4 x i8] c\"%%f\\0A\\00\"\n");
+    llvmCode.push_back("declare i32 @printf(i8*, ...)\n\n");
+
+    // scan the tree to generate the code
+    for (vector<Node>::iterator it = parseTree.begin(); it != parseTree.end();
+         it++) {
+        // Start analyzing the tree
+        if (it->symbol == "DeclList'")  // declaration of variable or function
+            declaration(it);
+        else if (it->symbol ==
+                 "VarDecl")  // declaration of variable (could be array)
+            varDecl(it);
+        else if (it->symbol == "Stmt")  // statement is appeared
+            statement(it);
+        else if (it->symbol == "{")
+            llvmCode.push_back("{\n");
+        else if (it->symbol == "}")
+            llvmCode.push_back("}\n");
+    }
+    exportLlvmCode();
+}
+
+// global variable or function define
+vector<string> CodeGenerator::declaration(vector<Node>::iterator it)
+{
+    vector<string> declCode;
+
+    it = it + 2;
+    string type = it->symbol;  // save the Type
+    it = it + 2;
+    string id = it->symbol;
+    it = it + 2;
+
+    stringstream line;
+    if (it->symbol == "VarDecl'") {  // global variable/array declaration
+        it++;
+        if (it->symbol == ";") {  // global variable
+            if (type == "int")
+                line << "@" << id << " = global "<< typeCast(type)<<" 0\n";
+            else if (type == "double")
+                line << "@" << id << " = global "<< typeCast(type) << " 0.000000e+00\n";
+            else if (type == "char")
+                line << "@" << id << " = global "<< typeCast(type)<<" 0\n";
+        }
+        else if (it->symbol == "[") {  // global array
+            it = it + 2;
+            line << "@" << id << " = global [" << it->symbol << " x " << typeCast(type) << "] zeroinitializer\n";
+        }
+    }
+    else if (it->symbol == "FunDecl") {  // function declaration
+        it = it + 3;
+        if (it->symbol == "epsilon")  // No parameters
+            line << "define " << typeCast(type) << " @" << id << "() ";
+        else {  // with parameters
+            line << "define " << typeCast(type) << " @" << id << "(";
+            for (; it->symbol != ")"; it++) {
+                if (it->symbol == "ParamDecl") {
+                    it = it + 2;
+                    line << typeCast(it->symbol) << " ";
+                    it = it + 2;
+                    line << "%" << it->symbol;
+                }
+                else if (it->symbol == ",")
+                    line << ",";
+            }
+            line << ")";
+        }
+    }
+    declCode.push_back(line.str());
+    return declCode;
+}
+
 const char* CodeGenerator::typeCast(string type)
 {
     string ret;
@@ -12,6 +88,73 @@ const char* CodeGenerator::typeCast(string type)
     else
         printf("Unknown Type found!\n");
     return ret.c_str();
+}
+
+// local variable declartion
+vector<string> CodeGenerator::varDecl(vector<Node>::iterator it)
+{
+    vector<string> varDeclCode;
+    stringstream line;
+
+    it = it + 2;
+    string type = it->symbol;  // save the Type
+    it = it + 2;
+    string id = it->symbol;  // save the id
+    it = it + 2;
+    if (it->symbol == ";") {  // variable
+        line << "%" << id << " = alloca " <<typeCast(type) << "\n";
+    }
+    else if (it->symbol == "[") {  // array
+        it = it + 2;
+        line << "%" << id << " = alloca [" << it->symbol << " x " << typeCast(type) << "]\n";
+    }
+    varDeclCode.push_back(line.str());
+    return varDeclCode;
+}
+
+vector<string> CodeGenerator::statement(vector<Node>::iterator it)
+{
+    vector<Node>::iterator temp = ++it;
+    if (temp->symbol == "print") {  // print id;
+        temp = temp + 2;
+        printID(temp);
+    }
+    else if (temp->symbol == "Expr") {  // Expr;
+        expr(it);
+    }
+    else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
+        ifElse(it);
+    }
+    else if (temp->symbol == "while") {  // while ( Expr ) Stmt
+        whileStatement(it);
+    }
+}
+
+vector<string> CodeGenerator::printID(vector<Node>::iterator it)
+{
+    vector<string> printCode;
+    stringstream line;
+
+    Symbol target = findType(it);
+    string id;
+    if (target.scope == 0)  // global variable
+        id = "@" + it->symbol;
+    else
+        id = "%" + it->symbol;
+    string type = target.type;
+    if (type == "int") {
+        line << "%" << instruction << " = load i32* " << id << "\n";
+        line << "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x " <<
+                "i8]* @istr, i32 0, i32 0), i32 %" << instruction << ")\n" ;
+    }
+    else if (type == "double") {
+        line << "%" << instruction << " = load double* " << id << "\n";
+        line << "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x "
+                "i8]* @fstr, i32 0, i32 0), double %"<< instruction <<")\n";
+    }
+    printCode.push_back(line.str());
+    instruction += 2;
+    return printCode;
 }
 
 Symbol CodeGenerator::findType(vector<Node>::iterator it)
@@ -28,110 +171,11 @@ Symbol CodeGenerator::findType(vector<Node>::iterator it)
     return Symbol();
 }
 
-// Assuming no variables have the same name
-Symbol CodeGenerator::findSymbol(string symbol)
+vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
 {
-    for (auto entry : symbolTable)
-        for (auto sym : entry.second)
-            if (sym.symbol == symbol)
-                return sym;
-    return Symbol();
-}
+    // TODO : add value to exprCode
+    vector<string> exprCode;
 
-void CodeGenerator::printID(vector<Node>::iterator it)
-{
-    Symbol target = findType(it);
-    string id;
-    if (target.scope == 0)  // global variable
-        id = "@" + it->symbol;
-    else
-        id = "%" + it->symbol;
-    string type = target.type;
-    if (type == "int") {
-        fprintf(llFile, "%%%d = load i32* %s\n", instruction, id.c_str());
-        fprintf(llFile,
-                "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x "
-                "i8]* @istr, i32 0, i32 0), i32 %%%d)\n",
-                instruction);
-    }
-    else if (type == "double") {
-        fprintf(llFile, "%%%d = load double* %s\n", instruction, id.c_str());
-        fprintf(llFile,
-                "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x "
-                "i8]* @fstr, i32 0, i32 0), double %%%d)\n",
-                instruction);
-    }
-    instruction += 2;
-}
-
-// global variable or function define
-void CodeGenerator::declaration(vector<Node>::iterator it)
-{
-    it = it + 2;
-    string type = it->symbol;  // save the Type
-    it = it + 2;
-    string id = it->symbol;
-    it = it + 2;
-
-    if (it->symbol == "VarDecl'") {  // global variable/array declaration
-        it++;
-        if (it->symbol == ";") {  // global variable
-            if (type == "int")
-                fprintf(llFile, "@%s = global %s 0\n", id.c_str(),
-                        typeCast(type));
-            else if (type == "double")
-                fprintf(llFile, "@%s = global %s 0.000000e+00\n", id.c_str(),
-                        typeCast(type));
-            else if (type == "char")
-                fprintf(llFile, "@%s = global %s 0\n", id.c_str(),
-                        typeCast(type));
-        }
-        else if (it->symbol == "[") {  // global array
-            it = it + 2;
-            fprintf(llFile, "@%s = global [%s x %s] zeroinitializer\n",
-                    id.c_str(), it->symbol.c_str(), typeCast(type));
-        }
-    }
-    else if (it->symbol == "FunDecl") {  // function declaration
-        it = it + 3;
-        if (it->symbol == "epsilon")  // No parameters
-            fprintf(llFile, "define %s @%s() ", typeCast(type), id.c_str());
-        else {  // with parameters
-            fprintf(llFile, "define %s @%s(", typeCast(type), id.c_str());
-            for (; it->symbol != ")"; it++) {
-                if (it->symbol == "ParamDecl") {
-                    it = it + 2;
-                    fprintf(llFile, "%s ", typeCast(it->symbol));
-                    it = it + 2;
-                    fprintf(llFile, "%%%s", it->symbol.c_str());
-                }
-                else if (it->symbol == ",")
-                    fprintf(llFile, ",");
-            }
-            fprintf(llFile, ")");
-        }
-    }
-}
-
-void CodeGenerator::varDecl(vector<Node>::iterator it)
-{  // local variable declartion
-    it = it + 2;
-    string type = it->symbol;  // save the Type
-    it = it + 2;
-    string id = it->symbol;  // save the id
-    it = it + 2;
-    if (it->symbol == ";") {  // variable
-        fprintf(llFile, "%%%s = alloca %s\n", id.c_str(), typeCast(type));
-    }
-    else if (it->symbol == "[") {  // array
-        it = it + 2;
-        fprintf(llFile, "%%%s = alloca [%s x %s]\n", id.c_str(),
-                it->symbol.c_str(), typeCast(type));
-    }
-}
-
-void CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
-{
     int exprLayer = it->layer;  // save this expr's level
     it++;
     vector<string> expression;
@@ -162,62 +206,15 @@ void CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
          x++)
         cout << *x << " ";
     cout << endl;
+
+    return exprCode;
 }
 
-void CodeGenerator::statement(vector<Node>::iterator it)
+vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
 {
-    vector<Node>::iterator temp = ++it;
-    if (temp->symbol == "print") {  // print id;
-        temp = temp + 2;
-        printID(temp);
-    }
-    else if (temp->symbol == "Expr") {  // Expr;
-        expr(it);
-    }
-    else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
-        ifElse(it);
-    }
-    else if (temp->symbol == "while") {  // while ( Expr ) Stmt
-        whileStatement(it);
-    }
-}
+    vector<string> code;
+    stringstream line;
 
-void CodeGenerator::whileStatement(vector<Node>::iterator it)
-{
-    string cmp;
-    int exprLabel, stmtLabel, originLabel;
-    exprLabel = ++instruction;
-    stmtLabel = ++instruction;
-    originLabel = ++instruction;
-
-    fprintf(llFile, "br label %%%d\n", exprLabel);
-
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        exprLabel);
-    it += 2;
-    expr(it);
-    // TODO: assign cmp
-    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(), stmtLabel,
-            originLabel);
-
-    it++;
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        stmtLabel);
-    statement(it);
-    fprintf(llFile, "br label %%%d\n", exprLabel);
-
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        originLabel);
-}
-
-void CodeGenerator::ifElse(vector<Node>::iterator it)
-{
     string cmp;
     int ifLabel, elseLabel, originLabel;
     ifLabel = ++instruction;
@@ -228,85 +225,72 @@ void CodeGenerator::ifElse(vector<Node>::iterator it)
     expr(it);
     // TODO : assign cmp
 
-    fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
-            ifLabel, elseLabel);
-
-    it++;
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        ifLabel);
-    statement(it);
-    fprintf(llFile, "br label %%%d\n", originLabel);
-
-    it++;
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        elseLabel);
-    statement(it);
-    fprintf(llFile, "br label %%%d\n", originLabel);
-
-    fprintf(
-        llFile,
-        "\n; <label>:%%%d                                       ; preds = %%0\n",
-        originLabel);
+    // fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
+    //         ifLabel, elseLabel);
+    //
+    // it++;
+    // line << "\n; <label>:%" << ifLabel;
+    // statement(it);
+    // fprintf(llFile, "br label %%%d\n", originLabel);
+    //
+    // it++;
+    // fprintf(llFile,
+    //         "\n; <label>:%%%d                                       ; preds = "
+    //         "%%0\n",
+    //         elseLabel);
+    // statement(it);
+    // fprintf(llFile, "br label %%%d\n", originLabel);
+    //
+    // fprintf(llFile,
+    //         "\n; <label>:%%%d                                       ; preds = "
+    //         "%%0\n",
+    //         originLabel);
+    return code;
 }
 
-void CodeGenerator::codeGeneration(vector<Node> parseTree)
+vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
 {
-    llFile = fopen("output.ll", "w");
+    vector<string> code;
+    stringstream line;
 
-    // set up print function
-    fprintf(llFile, "@istr = private constant[4 x i8] c\"%%d\\0A\\00\"\n");
-    fprintf(llFile, "@fstr = private constant[4 x i8] c\"%%f\\0A\\00\"\n");
-    fprintf(llFile, "declare i32 @printf(i8*, ...)\n\n");
+    string cmp;
+    int exprLabel, stmtLabel, originLabel;
+    exprLabel = ++instruction;
+    stmtLabel = ++instruction;
+    originLabel = ++instruction;
 
-    // Some flag
-
-    // scan the tree to generate the code
-    for (vector<Node>::iterator it = parseTree.begin(); it != parseTree.end();
-         it++) {
-        // Start analyzing the tree
-        if (it->symbol == "DeclList'")  // declaration of variable or function
-            declaration(it);
-        else if (it->symbol ==
-                 "VarDecl")  // declaration of variable (could be array)
-            varDecl(it);
-        else if (it->symbol == "Stmt")  // statement is appeared
-            statement(it);
-        else if (it->symbol == "{")
-            fprintf(llFile, "{\n");
-        else if (it->symbol == "}")
-            fprintf(llFile, "}\n");
-    }
-    fclose(llFile);
+    // fprintf(llFile, "br label %%%d\n", exprLabel);
+    //
+    // fprintf(llFile,
+    //         "\n; <label>:%%%d                                       ; preds = "
+    //         "%%0\n",
+    //         exprLabel);
+    // it += 2;
+    // expr(it);
+    // // TODO: assign cmp
+    // fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
+    //         stmtLabel, originLabel);
+    //
+    // it++;
+    // fprintf(llFile,
+    //         "\n; <label>:%%%d                                       ; preds = "
+    //         "%%0\n",
+    //         stmtLabel);
+    // statement(it);
+    // fprintf(llFile, "br label %%%d\n", exprLabel);
+    //
+    // fprintf(llFile,
+    //         "\n; <label>:%%%d                                       ; preds = "
+    //         "%%0\n",
+    //         originLabel);
+    return code;
 }
-
-void CodeGenerator::testFunctions()
-{
-    vector<string> tt;
-    tt.push_back("a");
-    tt.push_back("=");
-    tt.push_back("(");
-    tt.push_back("b");
-    tt.push_back("+");
-    tt.push_back("c");
-    tt.push_back(")");
-    tt.push_back("+");
-    tt.push_back("fun(a, b)");
-    tt.push_back("-");
-    tt.push_back("3");
-    //tt.push_back("!a");
-    for (auto sym : infixExprToPostfix(tt)) {
-        cout << sym.symbol << "\t" << sym.type << endl;
-    }
-    handleExpr(infixExprToPostfix(tt));
-}
-
 
 void CodeGenerator::handleExpr(vector<Symbol> expr)
 {
+    vector<string> exprCode;
+    stringstream line;
+
     stack<Symbol> s;
     Symbol operand1, operand2, result;
     for (auto sym : expr) {
@@ -321,31 +305,52 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             }
             else if (operand2.isArray) {
                 // TODO: handle expr in array
-            } else if (operand2.type == "") {	//it is constant
-            	operand2.isConstant = true;
-            	if (operand2.symbol.find(".",0) == string::npos) {	//it is int
-            		operand2.type = "int";
-            		instruction++;
-            		fprintf(llFile, "%%%d = i32 %s\n", instruction, operand2.symbol.c_str());
-            		operand2.symbol = "%" + to_string(instruction);
-            	}
-            	else {
-            		operand2.type = "double";	//need to cast to LLVM double type
-            		instruction++;
-            		fprintf(llFile, "%%%d = fpext float %s to double\n", instruction, operand2.symbol.c_str());
-            		operand2.symbol = "%" + to_string(instruction);
-            	}
-            } else {	//variable
-            	if (operand2.scope == 0) {	//global variable
-            		instruction++;
-            		fprintf(llFile, "%%%d = load %s* @%s\n", instruction, typeCast(operand2.type), operand2.symbol.c_str());
-            		operand2.symbol = "%" + to_string(instruction);
-            	}
-            	else {	//local variable
-            		instruction++;
-            		fprintf(llFile, "%%%d = load %s* %%%s\n", instruction, typeCast(operand2.type), operand2.symbol.c_str());
-            		operand2.symbol = "%" + to_string(instruction);
-            	}
+            }
+            else if (operand2.type == "") {  // it is constant
+                operand2.isConstant = true;
+                if (operand2.symbol.find(".", 0) == string::npos) {  // it is
+                                                                     // int
+                    operand2.type = "int";
+                    instruction++;
+
+                    line << "%" << instruction << " = i32 " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand2.symbol = "%" + to_string(instruction);
+                }
+                else {
+                    // need to cast to LLVM double type
+                    operand2.type = "double";
+                    instruction++;
+
+
+                    line << "%" << instruction << " = fpext float " << operand2.symbol << " to double\n",
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand2.symbol = "%" + to_string(instruction);
+                }
+            }
+            else {  // variable
+                if (operand2.scope == 0) {  // global variable
+                    instruction++;
+
+                    line << "%" << instruction << " = load " << typeCast(operand2.type) << "* @"<<operand2.symbol<<"\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand2.symbol = "%" + to_string(instruction);
+                }
+                else {  // local variable
+                    instruction++;
+
+                    line << "%" << instruction << " = load " << typeCast(operand2.type) << "* %" << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand2.symbol = "%" + to_string(instruction);
+                }
             }
 
             operand1 = s.top();
@@ -355,47 +360,75 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             }
             else if (operand1.isArray) {
                 // TODO: handle expr in array
-            } else if (operand1.type == "") {	//it is constant
-            	operand1.isConstant = true;
-            	if (operand1.symbol.find(".",0) == string::npos) {	//it is int
-            		operand1.type = "int";
-            		instruction++;
-            		fprintf(llFile, "%%%d = i32 %s\n", instruction, operand1.symbol.c_str());
-            		operand1.symbol = "%" + to_string(instruction);
-            	}
-            	else {
-            		operand1.type = "double";	//need to cast to LLVM double type
-            		instruction++;
-            		fprintf(llFile, "%%%d = fpext float %s to double\n", instruction, operand1.symbol.c_str());
-            		operand1.symbol = "%" + to_string(instruction);
-            	}
-            } else if (sym.symbol != "="){	//variable
-            	if (operand1.scope == 0) {	//global variable
-            		instruction++;
-            		fprintf(llFile, "%%%d = load %s* @%s\n", instruction, typeCast(operand1.type), operand1.symbol.c_str());
-            		operand1.symbol = "%" + to_string(instruction);
-            	}
-            	else {	//local variable
-            		instruction++;
-            		fprintf(llFile, "%%%d = load %s* %%%s\n", instruction, typeCast(operand1.type), operand1.symbol.c_str());
-            		operand1.symbol = "%" + to_string(instruction);
-            	}
             }
-            
-            //type conversion if needed
-            if (operand1.type != operand2.type && sym.symbol != "=") {	
-            	if (operand1.type == "int") {			//operand1 type conversion
-            		instruction++;
-            		fprintf(llFile, "%%%d = sitofp i32 %s* to double\n", instruction, operand1.symbol.c_str());
-            		operand1.symbol = "%" + to_string(instruction);
-            		operand1.type = "double";
-            	}
-            	else if (operand2.type == "int") {		//operand2 type conversion
-            		instruction++;
-            		fprintf(llFile, "%%%d = sitofp i32 %s* to double\n", instruction, operand2.symbol.c_str());
-            		operand2.symbol = "%" + to_string(instruction);
-            		operand2.type = "double";
-            	}
+            else if (operand1.type == "") {  // it is constant
+                operand1.isConstant = true;
+                if (operand1.symbol.find(".", 0) == string::npos) {  // it is
+                                                                     // int
+                    operand1.type = "int";
+                    instruction++;
+
+                    line << "%" << instruction << " = i32 " << operand1.symbol  << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand1.symbol = "%" + to_string(instruction);
+                }
+                else {
+                    operand1.type =
+                        "double";  // need to cast to LLVM double type
+                    instruction++;
+                    line << "%" << instruction << " = fpext float " << operand1.symbol << " to double\n",
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand1.symbol = "%" + to_string(instruction);
+                }
+            }
+            else if (sym.symbol != "=") {  // variable
+                if (operand1.scope == 0) {  // global variable
+                    instruction++;
+
+                    line << "%" << instruction << " = load " << typeCast(operand1.type) << "* @" << operand1.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand1.symbol = "%" + to_string(instruction);
+                }
+                else {  // local variable
+                    instruction++;
+
+                    line << "%" << instruction << " = load " << typeCast(operand1.type) << "* @" << operand1.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand1.symbol = "%" + to_string(instruction);
+                }
+            }
+
+            // type conversion if needed
+            if (operand1.type != operand2.type && sym.symbol != "=") {
+                if (operand1.type == "int") {  // operand1 type conversion
+                    instruction++;
+
+
+                    line << "%" << instruction << " =  sitofp i32 " << operand1.symbol <<"* to double\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand1.symbol = "%" + to_string(instruction);
+                    operand1.type = "double";
+                }
+                else if (operand2.type == "int") {  // operand2 type conversion
+                    instruction++;
+
+                    line << "%" << instruction << " =  sitofp i32 " << operand2.symbol <<"* to double\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    operand2.symbol = "%" + to_string(instruction);
+                    operand2.type = "double";
+                }
             }
 
             instruction++;
@@ -403,131 +436,203 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                  << operand2.symbol << endl;
             if (sym.symbol == "+") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = add nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    line << "%" << instruction << " = add nsw i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fadd double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    line << "%" << instruction << " = fadd double " << operand1.symbol <<", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "-") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = sub nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    line << "%" << instruction << " = sub nsw i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fsub double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    line << "%" << instruction << " = fsub double " << operand1.symbol << ", " << operand2.symbol <<"\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "*") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = mul nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    line << "%" << instruction << " = mul nsw i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fmul double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    line << "%" << instruction << " = fmul double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "/") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = sdiv i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    line << "%" << instruction << " = fsub double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
+                }
+            }
+            else if (sym.symbol == "*") {
+                if (operand1.type == "int") {
+                    line << "%" << instruction << " = mul nsw i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fdiv double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    line << "%" << instruction << " = fmul double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
+                }
+            }
+            else if (sym.symbol == "/") {
+                if (operand1.type == "int") {
+                    line << "%" << instruction << " = sdiv i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
+                    fprintf(llFile, "%%%d = sdiv i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                    fprintf(llFile, "%%%d = fdiv double %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "==") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp eq i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp eq i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp oeq double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp oeq double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "!=") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp ne i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp ne i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp one double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp one double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "<") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp slt i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp slt i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp olt double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp olt double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "<=") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp sle i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp sle i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp ole double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp ole double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == ">") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp sgt i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp sgt i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp ogt double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp ogt double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == ">=") {
                 if (operand1.type == "int") {
-                	fprintf(llFile, "%%%d = icmp sge i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "int";
+                    fprintf(llFile, "%%%d = icmp sge i32 %s, %s\n", instruction,
+                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                	fprintf(llFile, "%%%d = fcmp oge double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
-                	result.symbol = "%" + to_string(instruction);
-                	result.type = "double";
+                    fprintf(llFile, "%%%d = fcmp oge double %s, %s\n",
+                            instruction, operand1.symbol.c_str(),
+                            operand2.symbol.c_str());
+                    result.symbol = "%" + to_string(instruction);
+                    result.type = "double";
                 }
             }
             else if (sym.symbol == "&&") {
-                fprintf(llFile, "%%%d = and i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                fprintf(llFile, "%%%d = and i32 %s, %s\n", instruction,
+                        operand1.symbol.c_str(), operand2.symbol.c_str());
                 result.symbol = "%" + to_string(instruction);
                 result.type = "int";
             }
             else if (sym.symbol == "||") {
-                fprintf(llFile, "%%%d = or i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                fprintf(llFile, "%%%d = or i32 %s, %s\n", instruction,
+                        operand1.symbol.c_str(), operand2.symbol.c_str());
                 result.symbol = "%" + to_string(instruction);
                 result.type = "int";
             }
@@ -535,7 +640,7 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                 // TODO: generate llvm code
             }
             // TODO: assign meaningful symbol instead of temp
-            result = Symbol("temp", "Test");	//Test is type
+            result = Symbol("temp", "Test");  // Test is type
             s.push(result);
         }
     }
@@ -610,6 +715,22 @@ vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
     return prefixExpr;
 }
 
+// Assuming no variables have the same name
+Symbol CodeGenerator::findSymbol(string symbol)
+{
+    for (auto entry : symbolTable)
+        for (auto sym : entry.second)
+            if (sym.symbol == symbol)
+                return sym;
+    return Symbol();
+}
+
+void CodeGenerator::appendVectors(vector<string> v1, vector<string> v2)
+{
+    v1.reserve(v1.size() + v2.size());
+    v1.insert(v1.end, v2.begin(), v2.end());
+}
+
 bool CodeGenerator::isOperator(string symbol)
 {
     return OP_PRIORITY.find(symbol) != OP_PRIORITY.end();
@@ -619,6 +740,8 @@ void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
 {
     symbolTable = st;
 }
+
+void CodeGenerator::exportLlvmCode(string fileName = "output.ll") {}
 
 const map<string, int> CodeGenerator::OP_PRIORITY{{"-", 2},
                                                   {"!", 2},
