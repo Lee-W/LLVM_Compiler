@@ -114,20 +114,24 @@ vector<string> CodeGenerator::varDecl(vector<Node>::iterator it)
 
 vector<string> CodeGenerator::statement(vector<Node>::iterator it)
 {
+    vector<string> stmtCode;
+
     vector<Node>::iterator temp = ++it;
     if (temp->symbol == "print") {  // print id;
         temp = temp + 2;
-        printID(temp);
+        appendVectors(stmtCode, printID(temp));
     }
     else if (temp->symbol == "Expr") {  // Expr;
-        expr(it);
+        appendVectors(stmtCode, expr(it));
     }
     else if (temp->symbol == "if") {  // if ( Expr ) Stmt else Stmt
-        ifElse(it);
+        appendVectors(stmtCode, ifElse(it));
     }
     else if (temp->symbol == "while") {  // while ( Expr ) Stmt
-        whileStatement(it);
+        appendVectors(stmtCode, whileStatement(it));
     }
+
+    return stmtCode;
 }
 
 vector<string> CodeGenerator::printID(vector<Node>::iterator it)
@@ -522,117 +526,139 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                     exprCode.push_back(line.str());
                     line.str("");
 
-                    fprintf(llFile, "%%%d = sdiv i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fdiv double %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = fdiv double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == "==") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp eq i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp eq i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp oeq double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp oeq double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == "!=") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp ne i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp ne i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp one double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp one double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == "<") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp slt i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp slt i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp olt double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp olt double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == "<=") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp sle i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp sle i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp ole double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp ole double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == ">") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp sgt i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp sgt i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp ogt double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp ogt double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == ">=") {
                 if (operand1.type == "int") {
-                    fprintf(llFile, "%%%d = icmp sge i32 %s, %s\n", instruction,
-                            operand1.symbol.c_str(), operand2.symbol.c_str());
+                    line << "%" << instruction << " = icmp sge i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "int";
                 }
                 else if (operand1.type == "double") {
-                    fprintf(llFile, "%%%d = fcmp oge double %s, %s\n",
-                            instruction, operand1.symbol.c_str(),
-                            operand2.symbol.c_str());
+                    line << "%" << instruction << " = fcmp oge double " << operand1.symbol << ", " << operand2.symbol << "\n";
+                    exprCode.push_back(line.str());
+                    line.str("");
+
                     result.symbol = "%" + to_string(instruction);
                     result.type = "double";
                 }
             }
             else if (sym.symbol == "&&") {
-                fprintf(llFile, "%%%d = and i32 %s, %s\n", instruction,
-                        operand1.symbol.c_str(), operand2.symbol.c_str());
+                line << "%" << instruction << " = and i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                exprCode.push_back(line.str());
+                line.str("");
+
                 result.symbol = "%" + to_string(instruction);
                 result.type = "int";
             }
             else if (sym.symbol == "||") {
-                fprintf(llFile, "%%%d = or i32 %s, %s\n", instruction,
-                        operand1.symbol.c_str(), operand2.symbol.c_str());
+                line << "%" << instruction << " = or i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
+                exprCode.push_back(line.str());
+                line.str("");
+
                 result.symbol = "%" + to_string(instruction);
                 result.type = "int";
             }
@@ -725,10 +751,10 @@ Symbol CodeGenerator::findSymbol(string symbol)
     return Symbol();
 }
 
-void CodeGenerator::appendVectors(vector<string> v1, vector<string> v2)
+void CodeGenerator::appendVectors(vector<string>& v1, vector<string> v2)
 {
     v1.reserve(v1.size() + v2.size());
-    v1.insert(v1.end, v2.begin(), v2.end());
+    v1.insert(v1.end(), v2.begin(), v2.end());
 }
 
 bool CodeGenerator::isOperator(string symbol)
@@ -741,7 +767,7 @@ void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
     symbolTable = st;
 }
 
-void CodeGenerator::exportLlvmCode(string fileName = "output.ll") {}
+void CodeGenerator::exportLlvmCode(string fileName) {}
 
 const map<string, int> CodeGenerator::OP_PRIORITY{{"-", 2},
                                                   {"!", 2},

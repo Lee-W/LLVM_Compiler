@@ -39,7 +39,7 @@ private:
     vector<Symbol> infixExprToPostfix(vector<string> expr);
     bool isOperator(string symbol);
 
-    void appendVectors(vector<string> v1, vector<string> v2);
+    void appendVectors(vector<string>& v1, vector<string> v2);
 };
 
 
