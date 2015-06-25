@@ -218,12 +218,15 @@ void CodeGenerator::testFunctions()
     tt.push_back(")");
     tt.push_back("+");
     tt.push_back("fun(a, b)");
-    tt.push_back("!a");
+    tt.push_back("-");
+    tt.push_back("3");
+    //tt.push_back("!a");
     for (auto sym : infixExprToPostfix(tt)) {
         cout << sym.symbol << "\t" << sym.type << endl;
     }
     handleExpr(infixExprToPostfix(tt));
 }
+
 
 void CodeGenerator::handleExpr(vector<Symbol> expr)
 {
@@ -240,6 +243,31 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                 // TODO: handle expr in function
             } else if (operand2.isArray) {
                 // TODO: handle expr in array
+            } else if (operand2.type == "") {	//it is constant
+            	operand2.isConstant = true;
+            	if (operand2.symbol.find(".",0) == string::npos) {	//it is int
+            		operand2.type = "int";
+            		instruction++;
+            		fprintf(llFile, "%%%d = i32 %s\n", instruction, operand2.symbol.c_str());
+            		operand2.symbol = "%" + to_string(instruction);
+            	}
+            	else {
+            		operand2.type = "double";	//need to cast to LLVM double type
+            		instruction++;
+            		fprintf(llFile, "%%%d = fpext float %s to double\n", instruction, operand2.symbol.c_str());
+            		operand2.symbol = "%" + to_string(instruction);
+            	}
+            } else {	//variable
+            	if (operand2.scope == 0) {	//global variable
+            		instruction++;
+            		fprintf(llFile, "%%%d = load %s* @%s\n", instruction, typeCast(operand2.type), operand2.symbol.c_str());
+            		operand2.symbol = "%" + to_string(instruction);
+            	}
+            	else {	//local variable
+            		instruction++;
+            		fprintf(llFile, "%%%d = load %s* %%%s\n", instruction, typeCast(operand2.type), operand2.symbol.c_str());
+            		operand2.symbol = "%" + to_string(instruction);
+            	}
             }
 
             operand1 = s.top();
@@ -248,50 +276,186 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                 // TODO: handle expr in function
             } else if (operand1.isArray) {
                 // TODO: handle expr in array
+            } else if (operand1.type == "") {	//it is constant
+            	operand1.isConstant = true;
+            	if (operand1.symbol.find(".",0) == string::npos) {	//it is int
+            		operand1.type = "int";
+            		instruction++;
+            		fprintf(llFile, "%%%d = i32 %s\n", instruction, operand1.symbol.c_str());
+            		operand1.symbol = "%" + to_string(instruction);
+            	}
+            	else {
+            		operand1.type = "double";	//need to cast to LLVM double type
+            		instruction++;
+            		fprintf(llFile, "%%%d = fpext float %s to double\n", instruction, operand1.symbol.c_str());
+            		operand1.symbol = "%" + to_string(instruction);
+            	}
+            } else if (sym.symbol != "="){	//variable
+            	if (operand1.scope == 0) {	//global variable
+            		instruction++;
+            		fprintf(llFile, "%%%d = load %s* @%s\n", instruction, typeCast(operand1.type), operand1.symbol.c_str());
+            		operand1.symbol = "%" + to_string(instruction);
+            	}
+            	else {	//local variable
+            		instruction++;
+            		fprintf(llFile, "%%%d = load %s* %%%s\n", instruction, typeCast(operand1.type), operand1.symbol.c_str());
+            		operand1.symbol = "%" + to_string(instruction);
+            	}
+            }
+            
+            //type conversion if needed
+            if (operand1.type != operand2.type && sym.symbol != "=") {	
+            	if (operand1.type == "int") {			//operand1 type conversion
+            		instruction++;
+            		fprintf(llFile, "%%%d = sitofp i32 %s* to double\n", instruction, operand1.symbol.c_str());
+            		operand1.symbol = "%" + to_string(instruction);
+            		operand1.type = "double";
+            	}
+            	else if (operand2.type == "int") {		//operand2 type conversion
+            		instruction++;
+            		fprintf(llFile, "%%%d = sitofp i32 %s* to double\n", instruction, operand2.symbol.c_str());
+            		operand2.symbol = "%" + to_string(instruction);
+            		operand2.type = "double";
+            	}
             }
 
-            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t" << operand2.symbol << endl;
+            //cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t" << operand2.symbol << endl;
+            instruction++;
             if (sym.symbol == "+") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = add nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fadd double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "-") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = sub nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fsub double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "*") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = mul nsw i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fmul double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "/") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = sdiv i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fdiv double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "==") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp eq i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp oeq double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "!=") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp ne i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp one double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "<") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp slt i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp olt double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "<=") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp sle i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp ole double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == ">") {
-                // TODO: generate llvm code
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp sgt i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp ogt double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
-            else if (sym.symbol == ">") {
-                // TODO: generate llvm code
+            else if (sym.symbol == ">=") {
+                if (operand1.type == "int") {
+                	fprintf(llFile, "%%%d = icmp sge i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "int";
+                }
+                else if (operand1.type == "double") {
+                	fprintf(llFile, "%%%d = fcmp oge double %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                	result.symbol = "%" + to_string(instruction);
+                	result.type = "double";
+                }
             }
             else if (sym.symbol == "&&") {
-                // TODO: generate llvm code
+                fprintf(llFile, "%%%d = and i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                result.symbol = "%" + to_string(instruction);
+                result.type = "int";
             }
             else if (sym.symbol == "||") {
-                // TODO: generate llvm code
+                fprintf(llFile, "%%%d = or i32 %s, %s\n", instruction, operand1.symbol.c_str(), operand2.symbol.c_str());
+                result.symbol = "%" + to_string(instruction);
+                result.type = "int";
             }
             else if (sym.symbol == "=") {
                 // TODO: generate llvm code
             }
             // TODO: assign meaningful symbol instead of temp
-            result = Symbol("temp", "Test");
+            result = Symbol("temp", "Test");	//Test is type
             s.push(result);
         }
     }

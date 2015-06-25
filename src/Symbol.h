@@ -35,6 +35,7 @@ struct Symbol {
     string type;
     bool isArray;
     bool isFunction;
+    bool isConstant;
 };
 
 #endif
