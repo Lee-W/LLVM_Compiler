@@ -6,7 +6,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
     int scopeCounter = 0;
 
     bool isDecl = false;
-    bool isParDecl = false;
     bool isFunDecl = false;
     bool isExpr = false;
 
@@ -33,30 +32,27 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
                 symbolStack.push(paraStack.top());
                 paraStack.pop();
             }
-        } else if (curSymbol == "}") {
+        }
+        else if (curSymbol == "}") {
             Symbol topSymbol;
             while (topSymbol.symbol != "{" && !symbolStack.empty()) {
                 topSymbol = symbolStack.top();
                 symbolStack.pop();
             }
             scope = symbolStack.top().scope;
-        } else if (curSymbol == "DeclList'" || curSymbol == "VarDecl") {
+        }
+        else if (curSymbol == "DeclList'" || curSymbol == "VarDecl") {
             isDecl = true;
-        } else if (curSymbol == "Type" && (isDecl || isParDecl)) {
+        }
+        else if (curSymbol == "Type" && (isDecl)) {
             readNextLayer(it, curSymbol);
             type = curSymbol;
-        } else if (curSymbol == "id") {
+        }
+        else if (curSymbol == "id") {
             readNextLayer(it, curSymbol);
             symbol = curSymbol;
-
-            if (isExpr) {
-                if (isRightHandSide) {
-                    rightHandSide.push_back(curSymbol);
-                }
-                else
-                    leftHandSide = curSymbol;
-            }
-        } else if (curSymbol == "VarDecl'") {
+        }
+        else if (curSymbol == "VarDecl'") {
             readNextLayer(it, curSymbol);
             if (curSymbol == "[")
                 isArray = true;
@@ -67,7 +63,8 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             isDecl = false;
             isFunDecl = false;
             isArray = false;
-        } else if (curSymbol == "FunDecl") {
+        }
+        else if (curSymbol == "FunDecl") {
             isFunDecl = true;
 
             symbolStack.push(Symbol(scope, symbol, type, isArray, isFunDecl));
@@ -77,46 +74,66 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
             readNextLayer(it, curSymbol);
             while (curSymbol != ")") {
                 if (curSymbol == "ParamDecl") {
-                    readNextLayer(it, curSymbol);
-                    readNextLayer(it, curSymbol);
+                    readNextLayer(it, curSymbol, 2);
                     type = curSymbol;
 
-                    readNextLayer(it, curSymbol);
-                    readNextLayer(it, curSymbol);
+                    readNextLayer(it, curSymbol, 2);
                     symbol = curSymbol;
-                } else if (curSymbol == "ParamDecl'") {
+                }
+                else if (curSymbol == "ParamDecl'") {
                     readNextLayer(it, curSymbol);
                     if (curSymbol == "[") {
                         isArray = true;
                         readNextLayer(it, curSymbol);
                     }
-                } else if (curSymbol == "ParamDeclListTail'") {
-                    paraStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
-                    tableInsert(Symbol(scope+1, symbol, type, isArray, isFunDecl));
-                    cout << "Hi" << endl;
+                }
+                else if (curSymbol == "ParamDeclListTail'") {
+                    paraStack.push(
+                        Symbol(scope + 1, symbol, type, isArray, isFunDecl));
+                    tableInsert(
+                        Symbol(scope + 1, symbol, type, isArray, isFunDecl));
 
-                    isParDecl = false;
                     isArray = false;
                 }
                 readNextLayer(it, curSymbol);
             }
-        } else if (curSymbol == "Expr") {
-            isExpr = true;
-        } else if (curSymbol == "ExprIdTail" || curSymbol == "ExprArrayTail") {
-            readNextLayer(it, curSymbol);
+        }
+        else if (curSymbol == "Expr") {
+            int treeLayer = it->layer;
 
-            if (curSymbol == "=") {
-                isRightHandSide = true;
-                rightHandSide.clear();
-            } else if (curSymbol == "[") {
-                while (curSymbol != "]")
+            readNextLayer(it, curSymbol);
+            while (it->layer != treeLayer) {
+                if (curSymbol == "ExprIdTail" || curSymbol == "ExprArrayTail") {
                     readNextLayer(it, curSymbol);
-            } else if (curSymbol == "(") {
-                while (curSymbol != ")")
+
+                    if (curSymbol == "=") {
+                        isRightHandSide = true;
+                        rightHandSide.clear();
+                    }
+                    else if (curSymbol == "[") {
+                        while (curSymbol != "]")
+                            readNextLayer(it, curSymbol);
+                    }
+                    else if (curSymbol == "(") {
+                        while (curSymbol != ")")
+                            readNextLayer(it, curSymbol);
+                    }
+                }
+                else if (curSymbol == "num") {
                     readNextLayer(it, curSymbol);
+                    rightHandSide.push_back(curSymbol);
+                }
+                else if (curSymbol == "id") {
+                    readNextLayer(it, curSymbol);
+                    if (isRightHandSide) {
+                        rightHandSide.push_back(curSymbol);
+                    }
+                    else
+                        leftHandSide = curSymbol;
+                }
+                readNextLayer(it, curSymbol);
             }
-        } else if (curSymbol == ";" && isExpr) {
-            isExpr =false;
+            isExpr = false;
             isRightHandSide = false;
 
             if (leftHandSide != "")
@@ -124,9 +141,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
             leftHandSide = "";
             rightHandSide.clear();
-        } else if (curSymbol == "num" && isExpr) {
-            readNextLayer(it, curSymbol);
-            rightHandSide.push_back(curSymbol);
         }
     }
 
@@ -136,24 +150,26 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
     }
 }
 
-void SemanticAnalyzer::readNextLayer(vector<Node>::iterator& it, string& symbol)
+void SemanticAnalyzer::readNextLayer(vector<Node>::iterator& it, string& symbol, int readNum)
 {
-    ++it;
+    for (int i = 0; i < readNum; i++)
+        ++it;
     symbol = it->symbol;
 }
 
 void SemanticAnalyzer::printSymbolTable()
 {
-    for (auto entry: symbolTable) {
+    for (auto entry : symbolTable) {
         for (auto s : entry.second)
-            cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+            cout << s.scope << "\t" << s.symbol << "\t" << s.type << "\t"
+                 << s.isArray << "\t" << s.isFunction << endl;
         cout << endl;
     }
 }
 
-map<int, vector<Symbol> > SemanticAnalyzer::getSymbolTable()
+map<int, vector<Symbol>> SemanticAnalyzer::getSymbolTable()
 {
-	return symbolTable;
+    return symbolTable;
 }
 
 void SemanticAnalyzer::tableInsert(Symbol s)
@@ -178,9 +194,11 @@ void SemanticAnalyzer::exportSymbolTable(string fileName)
 {
     ofstream outputFileStream(fileName);
     if (outputFileStream.is_open()) {
-        for (auto entry: symbolTable) {
+        for (auto entry : symbolTable) {
             for (auto s : entry.second)
-                outputFileStream << s.scope << "\t" << s.symbol << "\t" << s.type << "\t" << s.isArray << "\t" << s.isFunction << endl;
+                outputFileStream << s.scope << "\t" << s.symbol << "\t"
+                                 << s.type << "\t" << s.isArray << "\t"
+                                 << s.isFunction << endl;
             outputFileStream << endl;
         }
         outputFileStream.close();
@@ -195,7 +213,8 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
     Symbol firstSymbol, secondSymbol;
     if (right.size() == 0) {
         return;
-    } else if (right.size() > 1) {
+    }
+    else if (right.size() > 1) {
         firstSymbol = Symbol(scope, right[0], getType(scope, right[0]));
         secondSymbol = Symbol(scope, right[1], getType(scope, right[1]));
 
@@ -205,7 +224,7 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
         }
 
         firstSymbol.symbol = "temp";
-        for (int i = 2 ; i < right.size(); i++) {
+        for (int i = 2; i < right.size(); i++) {
             secondSymbol = Symbol(scope, right[i], getType(scope, right[i]));
             if (firstSymbol.type != secondSymbol.type) {
                 printTypeWarning(firstSymbol, secondSymbol);
@@ -215,7 +234,8 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
         }
 
         secondSymbol = Symbol(scope, "temp", firstSymbol.type);
-    } else {
+    }
+    else {
         secondSymbol = Symbol(scope, right[0], getType(scope, right[0]));
     }
 
@@ -233,10 +253,10 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
     cout << endl;
 }
 
-void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2) {
-    cout << "warning (scope " << s1.scope << "): "
-         << s1.symbol << "  " << s1.type << ",  "
-         << s2.symbol << "  " << s2.type << endl;
+void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2)
+{
+    cout << "warning (scope " << s1.scope << "): " << s1.symbol << "  "
+         << s1.type << ",  " << s2.symbol << "  " << s2.type << endl;
 }
 
 string SemanticAnalyzer::getType(int scope, string symbol)
@@ -269,14 +289,12 @@ Symbol SemanticAnalyzer::accessSymbolTable(int scope, string symbol)
     return Symbol();
 }
 
-bool SemanticAnalyzer::isID(string symbol) {
-    return !isdigit(symbol[0]);
-}
+bool SemanticAnalyzer::isID(string symbol) { return !isdigit(symbol[0]); }
 
-bool SemanticAnalyzer::isDouble(string symbol) {
+bool SemanticAnalyzer::isDouble(string symbol)
+{
     return symbol.find(".") != string::npos;
 }
 
-const map<string, int> SemanticAnalyzer::TYPE_PRIORITY{{"int", 1},
-                                                       {"float", 2},
-                                                       {"double", 3}};
+const map<string, int> SemanticAnalyzer::TYPE_PRIORITY{
+    {"int", 1}, {"float", 2}, {"double", 3}};

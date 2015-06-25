@@ -11,15 +11,17 @@
 class SemanticAnalyzer {
 public:
     void analysis(vector<Node> parseTree);
-    map<int, vector<Symbol>> getSymbolTable();
-    void exportSymbolTable(string fileName="SymbolTable.txt");
+    map<int, vector<Symbol> > getSymbolTable();
+    void exportSymbolTable(string fileName = "SymbolTable.txt");
 
     void printSymbolTable();
+
 private:
     const static map<string, int> TYPE_PRIORITY;
-    map<int, vector<Symbol>> symbolTable;
+    map<int, vector<Symbol> > symbolTable;
 
-    void readNextLayer(vector<Node>::iterator& it, string& symbol);
+    void readNextLayer(vector<Node>::iterator& it, string& symbol,
+                       int readNum = 1);
     void tableInsert(Symbol s);
     bool symbolExistInSameScope(Symbol s);
 
