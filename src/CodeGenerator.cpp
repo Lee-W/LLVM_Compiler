@@ -209,7 +209,7 @@ vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculat
          x++)
         cout << *x << " ";
     cout << endl;
-
+	appendVectors(exprCode, handleExpr(infixExprToPostfix(expression)));
     return exprCode;
 }
 
@@ -298,7 +298,7 @@ vector<string> CodeGenerator::whileStatement(vector<Node>::iterator it)
     return code;
 }
 
-void CodeGenerator::handleExpr(vector<Symbol> expr)
+vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
 {
     vector<string> exprCode;
     stringstream line;
@@ -674,10 +674,11 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
                 // TODO: generate llvm code
             }
             // TODO: assign meaningful symbol instead of temp
-            result = Symbol("temp", "Test");  // Test is type
+            //result = Symbol("temp", "Test");  // Test is type
             s.push(result);
         }
     }
+    return exprCode;
 }
 
 vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
