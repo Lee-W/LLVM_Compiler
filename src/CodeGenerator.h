@@ -2,6 +2,7 @@
 #define CODE_GENERATOR_H
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <stdio.h>
 #include <vector>

@@ -12,12 +12,11 @@ void CodeGenerator::codeGeneration(vector<Node> parseTree)
          it++) {
         // Start analyzing the tree
         if (it->symbol == "DeclList'")  // declaration of variable or function
-            declaration(it);
-        else if (it->symbol ==
-                 "VarDecl")  // declaration of variable (could be array)
-            varDecl(it);
+            appendVectors(llvmCode, declaration(it));
+        else if (it->symbol == "VarDecl")  // declaration of variable (could be array)
+            appendVectors(llvmCode,varDecl(it));
         else if (it->symbol == "Stmt")  // statement is appeared
-            statement(it);
+            appendVectors(llvmCode, statement(it));
         else if (it->symbol == "{")
             llvmCode.push_back("{\n");
         else if (it->symbol == "}")
@@ -767,7 +766,19 @@ void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
     symbolTable = st;
 }
 
-void CodeGenerator::exportLlvmCode(string fileName) {}
+void CodeGenerator::exportLlvmCode(string fileName)
+{
+    ofstream outputFilestream(fileName);
+    if (outputFilestream.is_open()) {
+        for (auto line : llvmCode) {
+            outputFilestream << line;
+        }
+        outputFilestream.close();
+    }
+    else {
+        cout << "Cannot open file " << fileName << endl;
+    }
+}
 
 const map<string, int> CodeGenerator::OP_PRIORITY{{"-", 2},
                                                   {"!", 2},
