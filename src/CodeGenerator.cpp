@@ -132,6 +132,8 @@ vector<string> CodeGenerator::statement(vector<Node>::iterator& it)
         appendVectors(stmtCode, whileStatement(it));
     } else if (temp->symbol == "return") {
         // TODO: return 
+        string ret = "ret i32 0\n";
+        stmtCode.push_back(ret);
     } else if (temp->symbol == "Block") {
         appendVectors(stmtCode, block(it));
     }
@@ -151,6 +153,7 @@ vector<string> CodeGenerator::printID(vector<Node>::iterator& it)
     else
         id = "%" + it->symbol;
     string type = target.type;
+    instruction++;
     if (type == "int") {
         line << "%" << instruction << " = load i32* " << id << "\n";
         line << "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x " <<
@@ -456,7 +459,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     instruction++;
 
 
-                    line << "%" << instruction << " = sitofp i32 " << operand1.symbol <<"* to double\n";
+                    line << "%" << instruction << " = sitofp i32 " << operand1.symbol <<" to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -466,7 +469,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                 else if (operand2.type == "int") {  // operand2 type conversion
                     instruction++;
 
-                    line << "%" << instruction << " = sitofp i32 " << operand2.symbol <<"* to double\n";
+                    line << "%" << instruction << " = sitofp i32 " << operand2.symbol <<" to double\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -705,12 +708,12 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
             else if (sym.symbol == "=") {
                 if (operand1.type != operand2.type) {		//type conversion
                 	if (operand1.type == "int") {
-                		line << "%" << instruction << " fptosi double " << operand2.symbol << " to i32" << "\n";
+                		line << "%" << instruction << " = fptosi double " << operand2.symbol << " to i32" << "\n";
                 		exprCode.push_back(line.str());
                 		line.str("");
                 		operand2.symbol = "%" + to_string(instruction);
                 	} else if (operand1.type == "double") {
-                		line << "%" << instruction << " sitofp i32 " << operand2.symbol << " to double" << "\n";
+                		line << "%" << instruction << " = sitofp i32 " << operand2.symbol << " to double" << "\n";
                 		exprCode.push_back(line.str());
                 		line.str("");
                 		operand2.symbol = "%" + to_string(instruction);
