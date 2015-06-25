@@ -55,3 +55,6 @@ update:
 .PHONY: clean
 clean:
 	rm -r $(BUILD_DIR) $(BIN_DIR)
+
+clean_output:
+	rm *.ll *.txt .pull_log
