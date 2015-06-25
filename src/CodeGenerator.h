@@ -31,7 +31,7 @@ private:
     Symbol findType(vector<Node>::iterator it);
     Symbol findSymbol(string symbol);
 
-    void handleExpr();
+    void handleExpr(vector<Symbol> expr);
     vector<Symbol> infixExprToPostfix(vector<string> expr);
     bool isOperator(string symbol);
 };

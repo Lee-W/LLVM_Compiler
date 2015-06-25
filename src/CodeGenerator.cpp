@@ -132,33 +132,36 @@ void CodeGenerator::varDecl(vector<Node>::iterator it)
 
 void CodeGenerator::expr(vector<Node>::iterator it)  // start calculation
 {
-	int exprLayer = it->layer;	//save this expr's level
-	it++;
-	vector<string> expression;
-	for (;it->layer > exprLayer; it++) {
-		string thisSymbol = it->symbol;
-		if (thisSymbol == "+" || thisSymbol == "-" || thisSymbol == "*" || thisSymbol == "/" || 
-			thisSymbol == "==" || thisSymbol == "!=" || thisSymbol == "<" || thisSymbol == "<=" || 
-			thisSymbol == ">" || thisSymbol == ">=" || thisSymbol == "&&" || thisSymbol == "||" || thisSymbol == "=")	//BinOp
-			expression.push_back(thisSymbol);
-		else if (thisSymbol == "id") {
-			it++;
-			string var = it->symbol;
-			//it += 2;
-			expression.push_back(it->symbol);
-			/*
-			if (it->symbol != "(" && it->symbol != "[")	//function
-				expression.push_back(var);
-			*/
-		}
-		else if (thisSymbol == "num") {
-			it++;
-			expression.push_back(it->symbol);
-		}
-	}
-	for (vector<string>::iterator x = expression.begin(); x != expression.end(); x++)
-		cout << *x << " ";
-	cout << endl;
+    int exprLayer = it->layer;  // save this expr's level
+    it++;
+    vector<string> expression;
+    for (; it->layer > exprLayer; it++) {
+        string thisSymbol = it->symbol;
+        if (thisSymbol == "+" || thisSymbol == "-" || thisSymbol == "*" ||
+            thisSymbol == "/" || thisSymbol == "==" || thisSymbol == "!=" ||
+            thisSymbol == "<" || thisSymbol == "<=" || thisSymbol == ">" ||
+            thisSymbol == ">=" || thisSymbol == "&&" || thisSymbol == "||" ||
+            thisSymbol == "=")  // BinOp
+            expression.push_back(thisSymbol);
+        else if (thisSymbol == "id") {
+            it++;
+            string var = it->symbol;
+            // it += 2;
+            expression.push_back(it->symbol);
+            /*
+            if (it->symbol != "(" && it->symbol != "[")	//function
+                    expression.push_back(var);
+            */
+        }
+        else if (thisSymbol == "num") {
+            it++;
+            expression.push_back(it->symbol);
+        }
+    }
+    for (vector<string>::iterator x = expression.begin(); x != expression.end();
+         x++)
+        cout << *x << " ";
+    cout << endl;
 }
 
 void CodeGenerator::statement(vector<Node>::iterator it)
@@ -169,7 +172,7 @@ void CodeGenerator::statement(vector<Node>::iterator it)
         printID(temp);
     }
     else if (temp->symbol == "Expr") {  // Expr;
-    	expr(it);
+        expr(it);
     }
 }
 
@@ -213,24 +216,102 @@ void CodeGenerator::testFunctions()
     tt.push_back("+");
     tt.push_back("c");
     tt.push_back(")");
-    infixExprToPostfix(tt);
+    tt.push_back("+");
+    tt.push_back("fun(a, b)");
+    tt.push_back("!a");
+    for (auto sym : infixExprToPostfix(tt)) {
+        cout << sym.symbol << "\t" << sym.type << endl;
+    }
+    handleExpr(infixExprToPostfix(tt));
 }
 
-void CodeGenerator::handleExpr() {}
+void CodeGenerator::handleExpr(vector<Symbol> expr)
+{
+    stack<Symbol> s;
+    Symbol operand1, operand2, result;
+    for (auto sym : expr) {
+        if (sym.type != "op") {
+            s.push(sym);
+        }
+        else {
+            operand2 = s.top();
+            s.pop();
+            if (operand2.isFunction) {
+                // TODO: handle expr in function
+            } else if (operand2.isArray) {
+                // TODO: handle expr in array
+            }
+
+            operand1 = s.top();
+            s.pop();
+            if (operand1.isFunction) {
+                // TODO: handle expr in function
+            } else if (operand1.isArray) {
+                // TODO: handle expr in array
+            }
+
+            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t" << operand2.symbol << endl;
+            if (sym.symbol == "+") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "-") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "*") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "/") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "==") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "!=") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "<") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "<=") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == ">") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == ">") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "&&") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "||") {
+                // TODO: generate llvm code
+            }
+            else if (sym.symbol == "=") {
+                // TODO: generate llvm code
+            }
+            // TODO: assign meaningful symbol instead of temp
+            result = Symbol("temp", "Test");
+            s.push(result);
+        }
+    }
+}
 
 vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
 {
     vector<Symbol> prefixExpr;
     stack<string> s;
+    Symbol exprSymbol;
 
     for (auto sym : expr) {
         if (isOperator(sym)) {
             // the lower the prioity value, the higher the prioity
             if (!s.empty() && s.top() != "(") {
-                while (!s.empty() &&
-                        OP_PRIORITY.at(s.top()) <= OP_PRIORITY.at(sym)) {
-                    // prefixExpr.push_back(findSymbol(s.top()));
-                    cout << s.top() << "  ";
+                while (OP_PRIORITY.at(s.top()) <= OP_PRIORITY.at(sym)) {
+                    exprSymbol = findSymbol(s.top());
+                    exprSymbol.symbol = s.top();
+                    exprSymbol.type = "op";
+                    prefixExpr.push_back(exprSymbol);
                     s.pop();
                     if (!s.empty() && s.top() == "(")
                         break;
@@ -244,28 +325,38 @@ vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
         else if (sym == ")") {
             while (s.top() != "(") {
                 if (s.top() != "(") {
-                    // prefixExpr.push_back(findSymbol(s.top()));
-                    cout << s.top() << "  ";
+                    exprSymbol = findSymbol(s.top());
+                    exprSymbol.symbol = s.top();
+                    exprSymbol.type = "op";
+                    prefixExpr.push_back(exprSymbol);
                 }
                 s.pop();
             }
         }
         else {
-            if (sym.find("[")) {
-            }
-            else if (sym.find("(")) {
-            }
-            else {
-            }
-            // prefixExpr.push_back(findSymbol(s.top()));
-            cout << sym << "  ";
+            string symbolID;
+            if (sym.find("[") != string::npos)
+                symbolID = sym.substr(0, sym.find("["));
+            else if (sym.find("(") != string::npos)
+                symbolID = sym.substr(0, sym.find("("));
+            else if (sym.find("!") != string::npos)
+                symbolID = sym.substr(sym.find("!") + 1);
+            else if (sym.find("-") != string::npos)
+                symbolID = sym.substr(sym.find("-") + 1);
+            else
+                symbolID = sym;
+            exprSymbol = findSymbol(symbolID);
+            exprSymbol.symbol = sym;
+            prefixExpr.push_back(exprSymbol);
         }
     }
 
     while (!s.empty()) {
         if (s.top() != "(") {
-            // prefixExpr.push_back(findSymbol(s.top()));
-            cout << s.top() << "  ";
+            exprSymbol = findSymbol(s.top());
+            exprSymbol.symbol = s.top();
+            exprSymbol.type = "op";
+            prefixExpr.push_back(exprSymbol);
         }
         s.pop();
     }

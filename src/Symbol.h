@@ -8,6 +8,12 @@ using namespace std;
 struct Symbol {
     Symbol() {}
 
+    Symbol(string sy, string t)
+    {
+        symbol = sy;
+        type = t;
+    }
+
     Symbol(int s, string sy, string t)
     {
         scope = s;
