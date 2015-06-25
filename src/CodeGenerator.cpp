@@ -299,8 +299,8 @@ vector<string> CodeGenerator::whileStatement(vector<Node>::iterator& it)
     cmp = exprCode.back().substr(0, exprCode.back().find(" "));
 
     stmtLabel = ++instruction;
-    it++;
-    statement(it);
+    it += 2;
+    stmtCode = statement(it);
 
     originLabel = ++instruction;
 
