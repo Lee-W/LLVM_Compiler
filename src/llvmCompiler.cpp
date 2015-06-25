@@ -24,10 +24,10 @@ int main(int argc, const char *argv[])
         // sa.printSymbolTable();
         sa.exportSymbolTable();
 
-        CodeGenerator cg;
-        cg.setSymbolTable(sa.getSymbolTable());
-        cg.codeGeneration(parseTree);
-        cg.testFunctions();
+        // CodeGenerator cg;
+        // cg.setSymbolTable(sa.getSymbolTable());
+        // cg.codeGeneration(parseTree);
+        // cg.testFunctions();
     }
 
     return 0;

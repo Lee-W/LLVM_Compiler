@@ -72,20 +72,34 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
             symbolStack.push(Symbol(scope, symbol, type, isArray, isFunDecl));
             tableInsert(Symbol(scope, symbol, type, isArray, isFunDecl));
-
             isFunDecl = false;
-        } else if (curSymbol == "ParamDecl") { // && isFunDecl) {
-            isParDecl = true;
-        } else if (curSymbol == "ParamDecl'" && isParDecl) {
-            readNextLayer(it, curSymbol);
-            if (curSymbol == "[")
-                isArray = true;
-        } else if (curSymbol == "ParamDeclListTail'") {
-            paraStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
-            tableInsert(Symbol(scope+1, symbol, type, isArray, isFunDecl));
 
-            isParDecl = false;
-            isArray = false;
+            readNextLayer(it, curSymbol);
+            while (curSymbol != ")") {
+                if (curSymbol == "ParamDecl") {
+                    readNextLayer(it, curSymbol);
+                    readNextLayer(it, curSymbol);
+                    type = curSymbol;
+
+                    readNextLayer(it, curSymbol);
+                    readNextLayer(it, curSymbol);
+                    symbol = curSymbol;
+                } else if (curSymbol == "ParamDecl'") {
+                    readNextLayer(it, curSymbol);
+                    if (curSymbol == "[") {
+                        isArray = true;
+                        readNextLayer(it, curSymbol);
+                    }
+                } else if (curSymbol == "ParamDeclListTail'") {
+                    paraStack.push(Symbol(scope+1, symbol, type, isArray, isFunDecl));
+                    tableInsert(Symbol(scope+1, symbol, type, isArray, isFunDecl));
+                    cout << "Hi" << endl;
+
+                    isParDecl = false;
+                    isArray = false;
+                }
+                readNextLayer(it, curSymbol);
+            }
         } else if (curSymbol == "Expr") {
             isExpr = true;
         } else if (curSymbol == "ExprIdTail" || curSymbol == "ExprArrayTail") {
@@ -213,10 +227,10 @@ void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
         firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
     }
 
-    // cout << left << " =  ";
-    // for (auto r : right)
-    //     cout << r << "  ";
-    // cout << endl;
+    cout << left << " =  ";
+    for (auto r : right)
+        cout << r << "  ";
+    cout << endl;
 }
 
 void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2) {
