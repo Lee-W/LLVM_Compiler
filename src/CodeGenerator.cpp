@@ -17,7 +17,7 @@ const char* CodeGenerator::typeCast(string type)
 Symbol CodeGenerator::findType(vector<Node>::iterator it)
 {
     string id = it->symbol;
-    for (map<int, vector<Symbol> >::iterator symbols = symbolTable.begin();
+    for (map<int, vector<Symbol>>::iterator symbols = symbolTable.begin();
          symbols != symbolTable.end(); symbols++) {
         for (vector<Symbol>::iterator go = symbols->second.begin();
              go != symbols->second.end(); go++) {
@@ -174,6 +174,44 @@ void CodeGenerator::statement(vector<Node>::iterator it)
     else if (temp->symbol == "Expr") {  // Expr;
         expr(it);
     }
+    else if (temp->symbol == "if") {
+        ifElse(it);
+    }
+}
+
+void CodeGenerator::ifElse(vector<Node>::iterator it)
+{
+    string cmp;
+    int ifLabel, elseLabel, originLabel;
+
+    ifLabel = ++instruction;
+    elseLabel = ++instruction;
+    originLabel = ++instruction;
+
+    it = it + 2;
+    expr(it);
+    // TODO : assign cmp
+
+    fprintf(llFile, "br i1 %%%s, label %%true%d, label %%end%d\n", cmp.c_str(),
+            ifLabel, elseLabel);
+
+    it++;
+    fprintf(llFile,
+            "; <label>:%%%d                                       ; preds = %%0",
+            ifLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d", originLabel);
+
+    it++;
+    fprintf(llFile,
+            "; <label>:%%%d                                       ; preds = %%0",
+            elseLabel);
+    statement(it);
+    fprintf(llFile, "br label %%%d", originLabel);
+
+    fprintf(llFile,
+            "; <label>:%%%d                                       ; preds = %%0",
+            originLabel);
 }
 
 void CodeGenerator::codeGeneration(vector<Node> parseTree)
@@ -374,7 +412,7 @@ bool CodeGenerator::isOperator(string symbol)
     return OP_PRIORITY.find(symbol) != OP_PRIORITY.end();
 }
 
-void CodeGenerator::setSymbolTable(map<int, vector<Symbol> > st)
+void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
 {
     symbolTable = st;
 }
