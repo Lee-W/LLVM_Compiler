@@ -205,10 +205,10 @@ vector<string> CodeGenerator::expr(vector<Node>::iterator it)  // start calculat
             expression.push_back(it->symbol);
         }
     }
-    for (vector<string>::iterator x = expression.begin(); x != expression.end();
-         x++)
-        cout << *x << " ";
-    cout << endl;
+//    for (vector<string>::iterator x = expression.begin(); x != expression.end();
+//         x++)
+//        cout << *x << " ";
+//    cout << endl;
 	appendVectors(exprCode, handleExpr(infixExprToPostfix(expression)));
     return exprCode;
 }
@@ -232,10 +232,6 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     // it++;
     stmtCode1 = statement(it);
     falseLabel = ++instruction;
-    cout << "---------" << endl;
-    for (auto e : stmtCode1)
-        cout << e << endl;
-    cout << "---------" << endl;
 
     it++;
     stmtCode2 = statement(it);
@@ -466,8 +462,8 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
             }
 
             instruction++;
-            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t"
-                 << operand2.symbol << endl;
+            // cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t"
+                 // << operand2.symbol << endl;
             if (sym.symbol == "+") {
                 if (operand1.type == "int") {
                     line << "%" << instruction << " = add nsw i32 " << operand1.symbol << ", " << operand2.symbol << "\n";
