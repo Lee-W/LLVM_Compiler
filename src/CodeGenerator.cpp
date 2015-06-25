@@ -225,12 +225,17 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
 
     it += 2;
     exprCode = expr(it);
+
     cmp = exprCode.back().substr(0, exprCode.back().find(" "));
     trueLabel = ++instruction;
 
-    it++;
+    // it++;
     stmtCode1 = statement(it);
     falseLabel = ++instruction;
+    cout << "---------" << endl;
+    for (auto e : stmtCode1)
+        cout << e << endl;
+    cout << "---------" << endl;
 
     it++;
     stmtCode2 = statement(it);
