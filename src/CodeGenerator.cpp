@@ -17,7 +17,7 @@ const char* CodeGenerator::typeCast(string type)
 Symbol CodeGenerator::findType(vector<Node>::iterator it)
 {
     string id = it->symbol;
-    for (map<int, vector<Symbol>>::iterator symbols = symbolTable.begin();
+    for (map<int, vector<Symbol> >::iterator symbols = symbolTable.begin();
          symbols != symbolTable.end(); symbols++) {
         for (vector<Symbol>::iterator go = symbols->second.begin();
              go != symbols->second.end(); go++) {
@@ -238,7 +238,8 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             s.pop();
             if (operand2.isFunction) {
                 // TODO: handle expr in function
-            } else if (operand2.isArray) {
+            }
+            else if (operand2.isArray) {
                 // TODO: handle expr in array
             }
 
@@ -246,11 +247,13 @@ void CodeGenerator::handleExpr(vector<Symbol> expr)
             s.pop();
             if (operand1.isFunction) {
                 // TODO: handle expr in function
-            } else if (operand1.isArray) {
+            }
+            else if (operand1.isArray) {
                 // TODO: handle expr in array
             }
 
-            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t" << operand2.symbol << endl;
+            cout << "Expr:   " << operand1.symbol << "\t" << sym.symbol << "\t"
+                 << operand2.symbol << endl;
             if (sym.symbol == "+") {
                 // TODO: generate llvm code
             }
@@ -315,6 +318,8 @@ vector<Symbol> CodeGenerator::infixExprToPostfix(vector<string> expr)
                     s.pop();
                     if (!s.empty() && s.top() == "(")
                         break;
+                    else if (s.empty())
+                        break;
                 }
             }
             s.push(sym);
@@ -369,7 +374,7 @@ bool CodeGenerator::isOperator(string symbol)
     return OP_PRIORITY.find(symbol) != OP_PRIORITY.end();
 }
 
-void CodeGenerator::setSymbolTable(map<int, vector<Symbol>> st)
+void CodeGenerator::setSymbolTable(map<int, vector<Symbol> > st)
 {
     symbolTable = st;
 }

@@ -11,9 +11,9 @@
 class SemanticAnalyzer {
 public:
     void analysis(vector<Node> parseTree);
+
     map<int, vector<Symbol> > getSymbolTable();
     void exportSymbolTable(string fileName = "SymbolTable.txt");
-
     void printSymbolTable();
 
 private:
@@ -28,13 +28,12 @@ private:
 
     void checkType(vector<string> expr, int scope);
     vector<Symbol> infixExprToPostfix(vector<string> expr, int scope);
-    void printTypeWarning(int scope, Symbol s1, Symbol s2);
     string getType(int scope, string symbol);
-    string typeCasting(Symbol s1, Symbol s2);
     Symbol accessSymbolTable(int scope, string symbol);
+    void printTypeWarning(int scope, Symbol s1, Symbol s2);
+    string typeCasting(Symbol s1, Symbol s2);
     bool isID(string symbol);
     bool isDouble(string symbol);
-
     bool isOperator(string symbol);
 };
 
