@@ -7,7 +7,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
 
     bool isDecl = false;
     bool isFunDecl = false;
-    bool isExpr = false;
 
     string symbol;
     string type;
@@ -16,9 +15,6 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
     stack<Symbol> symbolStack;
     stack<Symbol> paraStack;
 
-    bool isRightHandSide = false;
-    string leftHandSide;
-    vector<string> rightHandSide;
 
     string curSymbol;
     for (auto it = parseTree.begin(); it != parseTree.end(); ++it) {
@@ -100,6 +96,12 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
         }
         else if (curSymbol == "Expr") {
             int treeLayer = it->layer;
+            bool isAssignment = false;
+
+            // bool isRightHandSide = false;
+            // string leftHandSide;
+            // vector<string> rightHandSide;
+            vector<string> expr;
 
             readNextLayer(it, curSymbol);
             while (it->layer != treeLayer) {
@@ -107,8 +109,8 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
                     readNextLayer(it, curSymbol);
 
                     if (curSymbol == "=") {
-                        isRightHandSide = true;
-                        rightHandSide.clear();
+                        isAssignment = true;
+                        expr.push_back(curSymbol);
                     }
                     else if (curSymbol == "[") {
                         while (curSymbol != "]")
@@ -119,28 +121,18 @@ void SemanticAnalyzer::analysis(vector<Node> parseTree)
                             readNextLayer(it, curSymbol);
                     }
                 }
-                else if (curSymbol == "num") {
+                else if (curSymbol == "num" || curSymbol == "id" || curSymbol == "BinOp"||
+                         curSymbol == "{" || curSymbol == "}") {
                     readNextLayer(it, curSymbol);
-                    rightHandSide.push_back(curSymbol);
-                }
-                else if (curSymbol == "id") {
-                    readNextLayer(it, curSymbol);
-                    if (isRightHandSide) {
-                        rightHandSide.push_back(curSymbol);
-                    }
-                    else
-                        leftHandSide = curSymbol;
+                    expr.push_back(curSymbol);
                 }
                 readNextLayer(it, curSymbol);
             }
-            isExpr = false;
-            isRightHandSide = false;
 
-            if (leftHandSide != "")
-                checkType(leftHandSide, rightHandSide, scope);
+            if (expr.size() > 1)
+                checkType(expr, scope);
 
-            leftHandSide = "";
-            rightHandSide.clear();
+            expr.clear();
         }
     }
 
@@ -208,54 +200,34 @@ void SemanticAnalyzer::exportSymbolTable(string fileName)
     }
 }
 
-void SemanticAnalyzer::checkType(string left, vector<string> right, int scope)
+void SemanticAnalyzer::checkType(vector<string> expr, int scope)
 {
-    Symbol firstSymbol, secondSymbol;
-    if (right.size() == 0) {
-        return;
-    }
-    else if (right.size() > 1) {
-        firstSymbol = Symbol(scope, right[0], getType(scope, right[0]));
-        secondSymbol = Symbol(scope, right[1], getType(scope, right[1]));
-
-        if (firstSymbol.type != secondSymbol.type) {
-            printTypeWarning(firstSymbol, secondSymbol);
-            firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
+    stack<Symbol> s;
+    Symbol operand1, operand2, result;
+    vector<Symbol> postfixExpr = infixExprToPostfix(expr, scope);
+    for (auto sym : postfixExpr) {
+        if (sym.type != "op") {
+            s.push(sym);
         }
+        else {
+            operand2 = s.top();
+            s.pop();
+            operand1 = s.top();
+            s.pop();
 
-        firstSymbol.symbol = "temp";
-        for (int i = 2; i < right.size(); i++) {
-            secondSymbol = Symbol(scope, right[i], getType(scope, right[i]));
-            if (firstSymbol.type != secondSymbol.type) {
-                printTypeWarning(firstSymbol, secondSymbol);
+            if (operand1.type != operand2.type)
+                printTypeWarning(scope, operand1, operand2);
 
-                firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
-            }
+            result = Symbol("temp", typeCasting(operand1, operand2));
+            s.push(result);
         }
-
-        secondSymbol = Symbol(scope, "temp", firstSymbol.type);
-    }
-    else {
-        secondSymbol = Symbol(scope, right[0], getType(scope, right[0]));
     }
 
-    firstSymbol = Symbol(scope, left, getType(scope, left));
-
-    if (firstSymbol.type != secondSymbol.type) {
-        printTypeWarning(firstSymbol, secondSymbol);
-
-        firstSymbol.type = typeCasting(firstSymbol, secondSymbol);
-    }
-
-    cout << left << " =  ";
-    for (auto r : right)
-        cout << r << "  ";
-    cout << endl;
 }
 
-void SemanticAnalyzer::printTypeWarning(Symbol s1, Symbol s2)
+void SemanticAnalyzer::printTypeWarning(int scope, Symbol s1, Symbol s2)
 {
-    cout << "warning (scope " << s1.scope << "): " << s1.symbol << "  "
+    cout << "warning (scope " << scope << "): " << s1.symbol << "  "
          << s1.type << ",  " << s2.symbol << "  " << s2.type << endl;
 }
 
@@ -298,3 +270,87 @@ bool SemanticAnalyzer::isDouble(string symbol)
 
 const map<string, int> SemanticAnalyzer::TYPE_PRIORITY{
     {"int", 1}, {"float", 2}, {"double", 3}};
+
+vector<Symbol> SemanticAnalyzer::infixExprToPostfix(vector<string> expr, int scope)
+{
+    vector<Symbol> postfixExpr;
+    stack<string> s;
+    Symbol exprSymbol;
+    for (auto sym : expr) {
+        if (isOperator(sym)) {
+            // the lower the prioity value, the higher the prioity
+            if (!s.empty() && s.top() != "(") {
+                while (OP_PRIORITY.at(s.top()) <= OP_PRIORITY.at(sym)) {
+                    exprSymbol.symbol = s.top();
+                    exprSymbol.type = "op";
+                    postfixExpr.push_back(exprSymbol);
+                    s.pop();
+                    if (!s.empty() && s.top() == "(")
+                        break;
+                    else if (s.empty())
+                        break;
+                }
+            }
+            s.push(sym);
+        }
+        else if (sym == "(") {
+            s.push(sym);
+        }
+        else if (sym == ")") {
+            while (s.top() != "(") {
+                if (s.top() != "(") {
+                    exprSymbol.symbol = s.top();
+                    exprSymbol.type = "op";
+                    postfixExpr.push_back(exprSymbol);
+                }
+                s.pop();
+            }
+        }
+        else {
+            if (isID(sym)) {
+                exprSymbol.symbol = sym;
+                exprSymbol.type = getType(scope, sym);
+            } else {
+                exprSymbol.symbol = sym;
+                if (isDouble(sym))
+                    exprSymbol.type = "double";
+                else
+                    exprSymbol.type = "int";
+            }
+            exprSymbol.scope = scope;
+            postfixExpr.push_back(exprSymbol);
+        }
+    }
+
+    while (!s.empty()) {
+        if (s.top() != "(") {
+            exprSymbol.symbol = s.top();
+            exprSymbol.type = "op";
+            postfixExpr.push_back(exprSymbol);
+        }
+        s.pop();
+    }
+
+    return postfixExpr;
+}
+
+bool SemanticAnalyzer::isOperator(string symbol)
+{
+    return OP_PRIORITY.find(symbol) != OP_PRIORITY.end();
+}
+
+const map<string, int> SemanticAnalyzer::OP_PRIORITY{{"-", 2},
+                                                  {"!", 2},
+                                                  {"+", 2},
+                                                  {"-", 2},
+                                                  {"*", 3},
+                                                  {"/", 3},
+                                                  {"==", 7},
+                                                  {"!=", 7},
+                                                  {"<", 6},
+                                                  {"<=", 6},
+                                                  {">", 6},
+                                                  {">=", 6},
+                                                  {"&&", 11},
+                                                  {"||", 12},
+                                                  {"=", 15}};
