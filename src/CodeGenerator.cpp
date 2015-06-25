@@ -3,8 +3,8 @@
 void CodeGenerator::codeGeneration(vector<Node> parseTree)
 {
     // set up print function
-    llvmCode.push_back("@istr = private constant[4 x i8] c\"%%d\\0A\\00\"\n");
-    llvmCode.push_back("@fstr = private constant[4 x i8] c\"%%f\\0A\\00\"\n");
+    llvmCode.push_back("@istr = private constant[4 x i8] c\"%d\\0A\\00\"\n");
+    llvmCode.push_back("@fstr = private constant[4 x i8] c\"%f\\0A\\00\"\n");
     llvmCode.push_back("declare i32 @printf(i8*, ...)\n\n");
 
     // scan the tree to generate the code
@@ -218,36 +218,45 @@ vector<string> CodeGenerator::ifElse(vector<Node>::iterator it)
     vector<string> code;
     stringstream line;
 
+    vector<string> exprCode, stmtCode1, stmtCode2;
+
     string cmp;
-    int ifLabel, elseLabel, originLabel;
-    ifLabel = ++instruction;
-    elseLabel = ++instruction;
-    originLabel = ++instruction;
+    int trueLabel, falseLabel, originLabel;
 
     it += 2;
-    expr(it);
-    // TODO : assign cmp
+    exprCode = expr(it);
+    trueLabel = ++instruction;
 
-    // fprintf(llFile, "br i1 %%%s, label %%%d, label %%%d\n", cmp.c_str(),
-    //         ifLabel, elseLabel);
-    //
-    // it++;
-    // line << "\n; <label>:%" << ifLabel;
-    // statement(it);
-    // fprintf(llFile, "br label %%%d\n", originLabel);
-    //
-    // it++;
-    // fprintf(llFile,
-    //         "\n; <label>:%%%d                                       ; preds = "
-    //         "%%0\n",
-    //         elseLabel);
-    // statement(it);
-    // fprintf(llFile, "br label %%%d\n", originLabel);
-    //
-    // fprintf(llFile,
-    //         "\n; <label>:%%%d                                       ; preds = "
-    //         "%%0\n",
-    //         originLabel);
+    it++;
+    stmtCode1 = statement(it);
+    falseLabel = ++instruction;
+
+    it++;
+    stmtCode2 = statement(it);
+    originLabel = ++instruction;
+
+    // TODO : assign cmp
+    appendVectors(code, exprCode);
+
+    line << "br i1 %" << cmp << ", label %" << trueLabel << ", label %" << falseLabel <<"\n";
+    code.push(line);
+    line.str("");
+
+    line << "\n; <label>:%\n" << trueLabel;
+    code.push(line);
+    line.str("");
+    appendVectors(code, stmtCode1);
+
+    line << "\n; <label>:%\n" << elseLabel;
+    code.push(line);
+    line.str("");
+    appendVectors(code, stmtCode2);
+
+
+    line << "\n; <label>:%\n" << originLabel;
+    code.push(line);
+    line.str("");
+
     return code;
 }
 
