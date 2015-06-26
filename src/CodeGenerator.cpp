@@ -167,7 +167,7 @@ vector<string> CodeGenerator::printID(vector<Node>::iterator& it)
                 "i8]* @fstr, i32 0, i32 0), double %"<< instruction <<")\n";
     }
     printCode.push_back(line.str());
-    instruction += 2;
+    instruction += 1;
 
     return printCode;
 }
@@ -374,7 +374,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     instruction++;
 
 
-                    line << "%" << instruction << " = fpext float " << operand2.symbol << " to double\n";
+                    line << "%" << instruction << " = fadd double 0.0, " << scientific << stod(operand2.symbol) << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -427,7 +427,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                     operand1.type =
                         "double";  // need to cast to LLVM double type
                     instruction++;
-                    line << "%" << instruction << " = fpext float " << operand1.symbol << " to double\n";
+                    line << "%" << instruction << " = fadd double 0.0, " << scientific << stod(operand1.symbol) << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
@@ -447,7 +447,7 @@ vector<string> CodeGenerator::handleExpr(vector<Symbol> expr)
                 else {  // local variable
                     instruction++;
 
-                    line << "%" << instruction << " = load " << typeCast(operand1.type) << "* @" << operand1.symbol << "\n";
+                    line << "%" << instruction << " = load " << typeCast(operand1.type) << "* %" << operand1.symbol << "\n";
                     exprCode.push_back(line.str());
                     line.str("");
 
